@@ -11,17 +11,24 @@
   },
   "dependencies": {
     "@nuxt/content": "3.12.0",
-    "@tailwindcss/vite": "^4.2.1",
     "better-sqlite3": "^12.6.2",
     "nuxt": "^4.3.1",
-    "tailwindcss": "^4.2.1",
     "vue": "^3.5.29",
     "vue-router": "^4.6.4"
   },
+  "trustedDependencies": [
+    "@parcel/watcher",
+    "better-sqlite3",
+    "esbuild",
+    "unrs-resolver"
+  ],
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",
     "@nuxt/eslint-config": "1.15.2",
+    "@nuxtjs/tailwindcss": "7.0.0-beta.0",
     "@stylistic/eslint-plugin": "^5.10.0",
+    "@tailwindcss/typography": "0.5.19",
+    "@tailwindcss/vite": "^4.2.1",
     "eslint": "^10.0.2",
     "eslint-config-flat-gitignore": "^2.2.1",
     "eslint-config-prettier": "^10.1.8",
@@ -29,10 +36,11 @@
     "eslint-plugin-better-tailwindcss": "^4.3.2",
     "eslint-plugin-perfectionist": "^5.6.0",
     "eslint-plugin-prettier": "^5.5.5",
-    "prettier-plugin-tailwindcss": "0.7.2",
     "eslint-plugin-prettier-vue": "5.0.0",
     "eslint-plugin-vue": "^10.8.0",
     "prettier": "^3.8.1",
+    "prettier-plugin-tailwindcss": "0.7.2",
+    "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "8.56.0",
     "vue-eslint-parser": "^10.4.0"
