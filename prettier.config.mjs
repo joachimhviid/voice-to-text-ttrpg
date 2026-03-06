@@ -3,6 +3,7 @@
  * @type {import("prettier").Config}
  */
 const config = {
+  bracketSpacing: true,
   endOfLine: 'auto',
   plugins: ['prettier-plugin-tailwindcss'],
   printWidth: 120,
@@ -10,7 +11,6 @@ const config = {
   singleQuote: true,
   tabWidth: 2,
   trailingComma: 'all',
-  bracketSpacing: true,
 }
 
 export default config
