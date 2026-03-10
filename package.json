@@ -23,6 +23,7 @@
     "@nuxt/eslint-config": "1.15.2",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@tailwindcss/typography": "^0.5.19",
+    "@types/better-sqlite3": "^7.6.11",
     "eslint": "^10.0.2",
     "eslint-config-flat-gitignore": "^2.2.1",
     "eslint-config-prettier": "^10.1.8",
