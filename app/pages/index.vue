@@ -1,5 +1,10 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+const { data: home } = await useAsyncData(() => queryCollection('content').path('/').first())
+</script>
 
 <template>
-  <div class="font-bold">hello</div>
+  <div class="prose mx-auto">
+    <ContentRenderer v-if="home" :value="home" />
+    <div v-else>Home not found</div>
+  </div>
 </template>
