@@ -3,7 +3,6 @@ import withNuxt from './.nuxt/eslint.config.mjs'
 import pluginPerfectionist from 'eslint-plugin-perfectionist'
 import eslintPluginPrettier from 'eslint-plugin-prettier'
 import vueParser from 'vue-eslint-parser'
-import eslintPluginBetterTailwindcss from 'eslint-plugin-better-tailwindcss'
 
 export default withNuxt(
   {
@@ -41,15 +40,5 @@ export default withNuxt(
       parser: vueParser,
     },
     name: 'tailwindcss/vue',
-  },
-  {
-    name: 'tailwindcss',
-    plugins: {
-      'better-tailwindcss': eslintPluginBetterTailwindcss,
-    },
-    rules: {
-      ...eslintPluginBetterTailwindcss.configs.recommended.rules,
-      'better-tailwindcss/enforce-consistent-line-wrapping': 'off',
-    },
   },
 )
