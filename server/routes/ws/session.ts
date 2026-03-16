@@ -1,8 +1,13 @@
+import { db } from '#server/utils/db'
+import { sessions } from '#server/db/schema'
+
 export default defineWebSocketHandler({
-  close: (peer, details) => {
+  close: (peer, _details) => {
     peer.publish('chat', { message: `${peer} left!`, user: 'server' })
   },
-  error: (peer, error) => {},
+  error: (_peer, error) => {
+    console.error('WebSocket error', error)
+  },
   message: (peer, message) => {
     if (message.text().includes('ping')) {
       peer.send({ message: 'pong', user: 'server' })
@@ -16,9 +21,11 @@ export default defineWebSocketHandler({
     }
   },
   open: (peer) => {
+    console.log('opening')
     peer.send({ message: `Welcome ${peer}!`, user: 'server' })
     peer.publish('chat', { message: `${peer} joined!`, user: 'server' })
     peer.subscribe('chat')
+    const ses = db.select().from(sessions).get()
+    console.log(ses)
   },
-  upgrade: (request) => {},
 })

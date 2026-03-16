@@ -10,6 +10,7 @@ export default defineNuxtConfig({
     experimental: {
       websocket: true,
     },
+    preset: 'bun',
   },
   vite: {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
