@@ -3,12 +3,11 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "bun --bun nuxt build",
-    "dev": "bun --bun nuxt dev",
-    "dev:proxy": "bunx concurrently \"bun --bun run dev\" \"bunx bun-proxy-vite -p 3001:3000\"",
-    "generate": "bun --bun nuxt generate",
-    "preview": "bun --bun nuxt preview",
-    "postinstall": "bun --bun nuxt prepare",
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
   },
@@ -17,18 +16,25 @@
     "@tailwindcss/vite": "^4.2.1",
     "@vueuse/core": "^14.2.1",
     "@vueuse/nuxt": "^14.2.1",
+    "better-sqlite3": "^12.6.2",
     "drizzle-orm": "^0.45.1",
     "nuxt": "^4.3.1",
     "tailwindcss": "^4.2.1",
     "vue": "^3.5.29",
     "vue-router": "^4.6.4"
   },
+  "trustedDependencies": [
+    "@parcel/watcher",
+    "better-sqlite3",
+    "esbuild",
+    "unrs-resolver"
+  ],
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",
     "@nuxt/eslint-config": "1.15.2",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@tailwindcss/typography": "^0.5.19",
-    "@types/bun": "^1.3.10",
+    "@types/better-sqlite3": "^7.6.13",
     "drizzle-kit": "^0.31.9",
     "eslint": "^10.0.2",
     "eslint-config-flat-gitignore": "^2.2.1",
@@ -44,5 +50,6 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "8.56.0",
     "vue-eslint-parser": "^10.4.0"
-  }
+  },
+  "packageManager": "pnpm@10.25.0+sha512.5e82639027af37cf832061bcc6d639c219634488e0f2baebe785028a793de7b525ffcd3f7ff574f5e9860654e098fe852ba8ac5dd5cefe1767d23a020a92f501"
 }
