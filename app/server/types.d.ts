@@ -6,15 +6,12 @@ declare module 'nitropack' {
   }
 }
 
-declare global {
-  interface Session {
-    id: number
-    title: string
-    content?: string
-  }
-
-  interface SessionInput {
-    title: string
-    content?: string
-  }
+export interface Session {
+  id: number
+  title: string
+  content?: string
+  combatStats?: string
+  inventoryStats?: string
+  relations?: string
+  summary?: string
 }

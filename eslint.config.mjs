@@ -50,6 +50,7 @@ export default withNuxt(
     rules: {
       ...eslintPluginBetterTailwindcss.configs.recommended.rules,
       'better-tailwindcss/enforce-consistent-line-wrapping': 'off',
+      'better-tailwindcss/no-unknown-classes': ['warn', { entryPoint: 'app/assets/css/main.css' }],
     },
   },
 )

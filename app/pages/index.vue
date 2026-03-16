@@ -1,7 +1,5 @@
 <script setup lang="ts">
-const { data: sessions } = await useAsyncData<Session[]>('sessions', () =>
-  $fetch('/api/sessions')
-);
+const { data: sessions } = await useAsyncData<Session[]>('sessions', () => $fetch('/api/sessions'))
 </script>
 
 <template>
@@ -15,9 +13,7 @@ const { data: sessions } = await useAsyncData<Session[]>('sessions', () =>
       </li>
     </ul>
     <p>
-      <NuxtLink to="/new-session">
-        New Session
-      </NuxtLink>
+      <NuxtLink to="/new-session"> New Session </NuxtLink>
     </p>
   </div>
 </template>
