@@ -1,4 +1,4 @@
-import { db } from '#server/utils/db'
+import { db } from '#server/db'
 import { sessions } from '#server/db/schema'
 
 export default defineWebSocketHandler({
