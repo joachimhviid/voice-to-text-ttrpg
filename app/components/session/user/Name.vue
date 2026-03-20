@@ -7,26 +7,46 @@ const props = withDefaults(
   { isUser: false, name: undefined },
 )
 
-const sessionNickname = ref<string | undefined>()
-const nickname = ref<string | undefined>(props.name)
+const emits = defineEmits<{
+  (e: 'setNickname', name: string): void
+}>()
+
+const confirmedNickname = ref<string | undefined>(props.name)
+const draftNickname = ref<string | undefined>(props.name)
+const hasNickname = computed(() => !!confirmedNickname.value?.trim())
+
+watch(
+  () => props.name,
+  (value) => {
+    confirmedNickname.value = value
+    draftNickname.value = value
+  },
+)
 
 const setNickname = () => {
-  if (!nickname.value || nickname.value.trim() === '') {
+  const trimmedNickname = draftNickname.value?.trim()
+  if (!trimmedNickname) {
     return
   }
-  sessionNickname.value = nickname.value
+
+  confirmedNickname.value = trimmedNickname
+  draftNickname.value = trimmedNickname
+  emits('setNickname', trimmedNickname)
 }
 
-const unsetNickname = () => (sessionNickname.value = undefined)
+const unsetNickname = () => {
+  confirmedNickname.value = undefined
+  draftNickname.value = undefined
+}
 </script>
 
 <template>
-  <div v-if="!sessionNickname && isUser" class="flex flex-col">
+  <div v-if="!hasNickname && isUser" class="flex flex-col">
     <!-- <label for="nickname">Set your nickname</label> -->
     <div class="flex gap-2">
       <input
         id="nickname"
-        v-model="nickname"
+        v-model="draftNickname"
         class="rounded border border-white/50 p-2.5"
         type="text"
         placeholder="Your nickname"
@@ -45,7 +65,7 @@ const unsetNickname = () => (sessionNickname.value = undefined)
     :class="[isUser ? 'border-amber-500 bg-amber-500/50 pr-3' : 'border-blue-500 bg-blue-500/50 pr-4']"
   >
     <Icon name="heroicons:user" size="20px" />
-    <span class="text-lg font-medium">{{ nickname }}</span>
+    <span class="text-lg font-medium">{{ confirmedNickname }}</span>
     <button
       v-if="isUser"
       class="flex cursor-pointer items-center rounded bg-white/0 p-1 transition hover:bg-white/20"
