@@ -5,10 +5,12 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   css: ['./assets/css/main.css'],
   devtools: { enabled: true },
-  // experimental: {
-  //   typedPages: true,
-  // },
-  modules: ['@nuxt/content', '@nuxt/eslint', '@vueuse/nuxt', 'nuxt-typed-router'],
+  icon: {
+    clientBundle: {
+      scan: true,
+    },
+  },
+  modules: ['@nuxt/content', '@nuxt/eslint', '@vueuse/nuxt', 'nuxt-typed-router', '@nuxt/icon'],
   nitro: {
     experimental: {
       websocket: true,
