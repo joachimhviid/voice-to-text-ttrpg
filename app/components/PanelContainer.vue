@@ -25,7 +25,7 @@ const widthClass = computed(() => {
 </script>
 
 <template>
-  <div class="mx-4 w-full rounded-lg border border-white/20 bg-gray-700/50 px-4 py-6" :class="widthClass">
+  <div class="mx-4 w-full rounded-lg border border-white/20 bg-gray-900 px-4 py-6" :class="widthClass">
     <slot></slot>
   </div>
 </template>

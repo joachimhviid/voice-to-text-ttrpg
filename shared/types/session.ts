@@ -28,11 +28,16 @@ export const sessionActionSchema = z.discriminatedUnion('action', [
 export const sessionEventSchema = z.discriminatedUnion('event', [
   z.object({
     event: z.literal('join'),
-    userId: z.string().min(1),
+    // isUser: z.boolean(),
+    nickname: z.string().min(1),
+    participantId: z.number().int().positive(),
+    peerId: z.string().min(1),
+    sessionId: z.string().min(1),
   }),
   z.object({
     event: z.literal('setNickname'),
     nickname: z.string().min(1),
+    participantId: z.number().int().positive(),
     userId: z.string().min(1),
   }),
 ])

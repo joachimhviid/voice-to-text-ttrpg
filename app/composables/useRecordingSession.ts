@@ -3,11 +3,14 @@ export const useRecordingSession = () => {
 
   const loading = ref(false)
 
-  const createSession = async () => {
+  const createSession = async (nickname: string) => {
     loading.value = true
 
     try {
       const res = await $fetch('/api/sessions/create', {
+        body: {
+          nickname,
+        },
         method: 'POST',
       })
       isHostCookie.value = true
@@ -25,12 +28,13 @@ export const useRecordingSession = () => {
     isHostCookie.value = false
   }
 
-  const joinSession = async (inviteCode: string) => {
+  const joinSession = async (inviteCode: string, nickname: string) => {
     loading.value = true
     try {
       const res = await $fetch('/api/sessions/join', {
         body: {
           inviteCode,
+          nickname,
         },
         method: 'POST',
       })

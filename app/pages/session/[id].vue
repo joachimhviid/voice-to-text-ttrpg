@@ -9,8 +9,9 @@ const { data } = await useFetch(`/api/sessions/${params.id}` as '/api/sessions/:
 const { copied, copy } = useClipboard()
 
 type Participant = {
-  nickname?: string
-  userId: string
+  nickname: string
+  participantId: number
+  peerId: string
 }
 
 const participants = ref<Participant[]>([])
@@ -18,7 +19,6 @@ const participants = ref<Participant[]>([])
 const {
   data: wsData,
   open,
-  send,
   status,
 } = useWebSocket('/ws/session', {
   immediate: false,
@@ -29,38 +29,29 @@ const {
       console.error(result.error)
       return
     }
-    match(result.data)
-      .with({ event: 'join' }, (event) => {
-        console.log('someone joined', event.userId)
-        participants.value.push({
-          userId: event.userId,
-        })
-      })
-      .with({ event: 'setNickname' }, (event) => {
-        console.log(`${event.userId} set their nickname to ${event.nickname}`)
-        const participant = participants.value.find((p) => p.userId === event.userId)
-        if (!participant) {
-          console.log('User with userid not found', event.userId, participants.value)
-          return
-        }
-        participant.nickname = event.nickname
-      })
-  },
-})
+    match(result.data).with({ event: 'join' }, (event) => {
+      const existingParticipant = participants.value.find(
+        (participant) => participant.participantId === event.participantId,
+      )
+      if (existingParticipant) {
+        existingParticipant.nickname = event.nickname
+        existingParticipant.peerId = event.peerId
+        return
+      }
 
-watch(wsData, (value) => {
-  console.log(value)
+      participants.value.push({
+        // isUser: event.isUser,
+        nickname: event.nickname,
+        participantId: event.participantId,
+        peerId: event.peerId,
+      })
+    })
+  },
 })
 
 onMounted(() => {
   open()
-  send(JSON.stringify({ action: 'join', sessionId: params.id }))
 })
-
-const setNickname = async (name: string) => {
-  console.log('Setting nickname', name)
-  send(JSON.stringify({ action: 'setNickname', nickname: name, sessionId: params.id }))
-}
 </script>
 
 <template>
@@ -105,18 +96,8 @@ const setNickname = async (name: string) => {
       </div>
       <div>
         <h2 class="mb-4 text-2xl font-bold">Participants</h2>
-        <div class="flex flex-col justify-between gap-2 md:flex-row">
-          <SessionUserName is-user @set-nickname="setNickname" />
-          <div class="flex gap-2 md:self-end">
-            <SessionUserName
-              v-for="(participant, index) in participants"
-              :key="participant.userId"
-              :name="participant.nickname ?? `Anon${index}`"
-            />
-            <!-- <SessionUserName name="Dave" />
-            <SessionUserName name="Steve" />
-            <SessionUserName name="Nate" /> -->
-          </div>
+        <div class="flex flex-wrap gap-2">
+          <SessionUserName v-for="participant in participants" :key="participant.peerId" :name="participant.nickname" />
         </div>
       </div>
       {{ wsData }}
