@@ -3,7 +3,7 @@ import { sessionEventSchema } from '#imports'
 import { match } from 'ts-pattern'
 
 const { params } = useRoute('session-id')
-const { isHost } = useRecordingSession()
+const { isHost, recordingState } = useRecordingSession()
 
 const { data } = await useFetch(`/api/sessions/${params.id}` as '/api/sessions/:id')
 const { copied, copy } = useClipboard()
@@ -16,11 +16,7 @@ type Participant = {
 
 const participants = ref<Participant[]>([])
 
-const {
-  data: wsData,
-  open,
-  status,
-} = useWebSocket('/ws/session', {
+const { data: wsData, open } = useWebSocket('/ws/session', {
   immediate: false,
   onMessage: (ws, event) => {
     const result = sessionEventSchema.safeParse(JSON.parse(event.data))
@@ -56,13 +52,10 @@ onMounted(() => {
 
 <template>
   <div class="mx-auto flex h-svh max-w-5xl items-center justify-center">
-    <PanelContainer size="full">
+    <PanelContainer size="full" class="relative">
       <div class="flex justify-between">
         <h1 class="mb-4 text-4xl font-bold">Session</h1>
-        <div data-allow-mismatch="text">Status {{ status }}</div>
-      </div>
-      <div v-if="isHost">
-        <SessionHostControls />
+        <div data-allow-mismatch="text">Status {{ recordingState }}</div>
       </div>
 
       <div class="my-8 flex flex-col items-center justify-center">
@@ -92,15 +85,18 @@ onMounted(() => {
         </div>
       </div>
       <div>
-        <p>Waiting for session to start</p>
+        <p class="animate-pulse text-center" style="animation-duration: 5000ms">Waiting for session to start</p>
       </div>
-      <div>
+      <div class="mb-4">
         <h2 class="mb-4 text-2xl font-bold">Participants</h2>
         <div class="flex flex-wrap gap-2">
           <SessionUserName v-for="participant in participants" :key="participant.peerId" :name="participant.nickname" />
         </div>
       </div>
-      {{ wsData }}
+      <div v-if="isHost" class="border-t border-white/20 pt-4">
+        <SessionHostControls />
+      </div>
+      <div class="absolute inset-x-0 top-full p-2">{{ wsData }}</div>
     </PanelContainer>
   </div>
 </template>

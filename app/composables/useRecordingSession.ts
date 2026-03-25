@@ -3,6 +3,21 @@ export const useRecordingSession = () => {
 
   const loading = ref(false)
 
+  // TODO: @Casper hook up media recorder state here
+  const recordingState = useState<RecordingState>('recording-state', () => 'inactive')
+
+  const startRecording = () => {
+    recordingState.value = 'recording'
+  }
+
+  const pauseRecording = () => {
+    recordingState.value = 'paused'
+  }
+
+  const stopRecording = () => {
+    recordingState.value = 'inactive'
+  }
+
   const createSession = async (nickname: string) => {
     loading.value = true
 
@@ -25,7 +40,8 @@ export const useRecordingSession = () => {
   }
 
   const closeSession = () => {
-    isHostCookie.value = false
+    // isHostCookie.value = false
+    console.log('closing session')
   }
 
   const joinSession = async (inviteCode: string, nickname: string) => {
@@ -55,5 +71,9 @@ export const useRecordingSession = () => {
     isHost,
     joinSession,
     loading,
+    pauseRecording,
+    recordingState,
+    startRecording,
+    stopRecording,
   }
 }
