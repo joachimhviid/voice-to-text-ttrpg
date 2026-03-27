@@ -51,12 +51,7 @@ const joinSession = () => {
             Invite code
           </label>
         </div>
-        <button
-          class="cursor-pointer rounded border border-purple-500 bg-purple-500/50 px-4 py-2 font-medium transition-colors hover:border-purple-800 hover:bg-purple-800/50"
-          @click="joinSession"
-        >
-          Join session
-        </button>
+        <UiButton variant="primary" @click="joinSession">Join session</UiButton>
       </div>
     </PanelContainer>
   </div>

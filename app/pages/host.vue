@@ -31,13 +31,9 @@ const create = () => {
           Nickname
         </label>
       </div>
-      <button
-        class="w-full cursor-pointer rounded border border-purple-500 bg-purple-500/50 px-4 py-2 font-medium transition-colors hover:border-purple-800 hover:bg-purple-800/50"
-        :disabled="loading"
-        @click="create"
-      >
+      <UiButton variant="primary" :disabled="loading" @click="create">
         {{ loading ? 'Creating...' : 'Create session' }}
-      </button>
+      </UiButton>
     </PanelContainer>
   </div>
 </template>
