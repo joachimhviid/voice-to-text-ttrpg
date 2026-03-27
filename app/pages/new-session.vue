@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Session } from '~/server/types'
+import type { Session } from '#shared/types/session'
 
 const title = ref('')
 const content = ref('')
@@ -7,7 +7,7 @@ const combatStats = ref('')
 const inventoryStats = ref('')
 const relations = ref('')
 const summary = ref('')
-const router = useRouter()
+// const router = useRouter()
 
 async function createSession() {
   if (!title.value) {
@@ -28,7 +28,7 @@ async function createSession() {
   })
 
   if (data.value?.id) {
-    await router.push(`/sessions/${data.value.id}`)
+    // await router.push(`/sessions/${data.value.id}`)
   }
 }
 </script>

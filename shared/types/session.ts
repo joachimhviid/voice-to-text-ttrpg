@@ -41,3 +41,13 @@ export const sessionEventSchema = z.discriminatedUnion('event', [
     userId: z.string().min(1),
   }),
 ])
+
+export type Session = {
+  combatStats?: string
+  content?: string
+  id: number
+  inventoryStats?: string
+  relations?: string
+  summary?: string
+  title: string
+}

@@ -1,16 +1,16 @@
 <script setup lang="ts">
-const { data: sessions } = await useAsyncData<Session[]>('sessions', () => $fetch('/api/sessions'))
+// const { data: sessions } = await useAsyncData<Session[]>('sessions', () => $fetch('/api/sessions'))
 </script>
 
 <template>
-  <div class="prose prose-invert prose-a:no-underline lg:prose-xl">
+  <div class="prose prose-invert prose-a:no-underline lg:prose-xl mx-auto">
     <h1>D&D Sessions</h1>
     <ul>
-      <li v-for="session in sessions" :key="session.id">
+      <!-- <li v-for="session in sessions" :key="session.id">
         <NuxtLink :to="`/sessions/${session.id}`">
           {{ session.title }}
         </NuxtLink>
-      </li>
+      </li> -->
     </ul>
     <p>
       <NuxtLink to="/new-session"> New Session </NuxtLink>

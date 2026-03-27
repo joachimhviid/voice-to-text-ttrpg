@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Session } from '~/server/types'
+import type { Session } from '#shared/types/session'
 
 const route = useRoute()
 const { data: session, refresh } = await useFetch<Session>(`/api/sessions/${route.params.id}`)
@@ -18,8 +18,8 @@ function cancelEditing() {
 
 async function saveChanges() {
   await useFetch(`/api/sessions/${route.params.id}`, {
-    method: 'PUT',
     body: editableSession.value,
+    method: 'PUT',
   })
   isEditing.value = false
   await refresh()
