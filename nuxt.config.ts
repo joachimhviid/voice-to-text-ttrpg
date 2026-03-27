@@ -5,10 +5,21 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   css: ['./assets/css/main.css'],
   devtools: { enabled: true },
-  modules: ['@nuxt/content', '@nuxt/eslint'],
+  icon: {
+    clientBundle: {
+      scan: true,
+    },
+  },
+  modules: ['@nuxt/content', '@nuxt/eslint', '@vueuse/nuxt', 'nuxt-typed-router', '@nuxt/icon'],
+  nitro: {
+    experimental: {
+      websocket: true,
+    },
+  },
   vite: {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error untyped
+    optimizeDeps: {
+      include: [],
+    },
     plugins: [tailwindcss()],
   },
 })

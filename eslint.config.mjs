@@ -22,6 +22,7 @@ export default withNuxt(
           trailingComma: 'all',
         },
       ],
+      'vue/html-self-closing': 'off',
     },
   },
   {

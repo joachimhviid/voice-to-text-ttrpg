@@ -1,0 +1,215 @@
+import { db } from '#server/db'
+import type { ParticipantRole } from '#server/db/schema'
+import { participants, SessionStatus } from '#server/db/schema'
+import { sessionActionSchema } from '#shared/types/session'
+import { PARTICIPANT_SESSION_COOKIE, parseParticipantSessionCookie } from '#shared/utils/participantSessionCookie'
+import { and, eq } from 'drizzle-orm'
+import { match } from 'ts-pattern'
+import { parse } from 'cookie-es'
+
+type PeerParticipantContext = {
+  nickname: string
+  participantId: number
+  role: ParticipantRole
+  sessionId: string
+}
+
+type SessionPeerContext = {
+  participant?: PeerParticipantContext
+}
+
+const getParticipantContext = (peer: { context?: unknown }) => (peer.context as SessionPeerContext)?.participant
+
+export default defineWebSocketHandler({
+  close: (peer, _details) => {
+    const participant = getParticipantContext(peer)
+    if (!participant) {
+      return
+    }
+
+    db.update(participants)
+      .set({ peerId: null })
+      .where(and(eq(participants.id, participant.participantId), eq(participants.peerId, peer.id)))
+      .run()
+  },
+  error: (_peer, error) => {
+    console.error('WebSocket error', error)
+  },
+  message: (peer, message) => {
+    const data = message.json()
+
+    const result = sessionActionSchema.safeParse(data)
+    if (!result.success) {
+      peer.send({ error: 'Invalid payload format' })
+      return
+    }
+
+    match(result.data)
+      .with({ action: 'join' }, (event) => {
+        const participant = getParticipantContext(peer)
+        if (!participant) {
+          peer.send(JSON.stringify({ error: 'Unauthorized websocket join' }))
+          peer.close(1008)
+          return
+        }
+
+        if (participant.sessionId !== event.sessionId) {
+          peer.send(JSON.stringify({ error: 'Session mismatch for websocket join' }))
+          return
+        }
+
+        db.update(participants)
+          .set({ peerId: peer.id })
+          .where(and(eq(participants.id, participant.participantId), eq(participants.sessionId, event.sessionId)))
+          .run()
+
+        peer.subscribe(event.sessionId)
+        peer.publish(
+          event.sessionId,
+          JSON.stringify({
+            event: 'join',
+            nickname: participant.nickname,
+            participantId: participant.participantId,
+            peerId: peer.id,
+            sessionId: participant.sessionId,
+          }),
+        )
+      })
+      .with({ action: 'setNickname' }, (event) => {
+        // TODO: remove this action probably
+        const participant = getParticipantContext(peer)
+        if (!participant) {
+          peer.send(JSON.stringify({ error: 'Unauthorized websocket nickname update' }))
+          return
+        }
+
+        if (participant.sessionId !== event.sessionId) {
+          peer.send(JSON.stringify({ error: 'Session mismatch for nickname update' }))
+          return
+        }
+
+        db.update(participants)
+          .set({ participantName: event.nickname })
+          .where(and(eq(participants.id, participant.participantId), eq(participants.sessionId, event.sessionId)))
+          .run()
+
+        participant.nickname = event.nickname
+
+        peer.publish(
+          event.sessionId,
+          JSON.stringify({
+            event: 'setNickname',
+            nickname: event.nickname,
+            participantId: participant.participantId,
+            userId: peer.id,
+          }),
+        )
+      })
+      .with({ action: 'startRecording' }, (_event) => {})
+      .with({ action: 'stopRecording' }, (_event) => {})
+      .with({ action: 'closeSession' }, (_event) => {
+        peer.close(1000)
+      })
+  },
+  open: (peer) => {
+    console.log('Peer connected', peer.id)
+    console.log(`There are ${peer.peers.size} already in the room`)
+
+    const newParticipant = getParticipantContext(peer)
+    if (!newParticipant) {
+      peer.send(JSON.stringify({ error: 'Missing participant context' }))
+      return
+    }
+
+    peer.subscribe(newParticipant.sessionId)
+
+    db.update(participants)
+      .set({ peerId: peer.id })
+      .where(
+        and(eq(participants.id, newParticipant.participantId), eq(participants.sessionId, newParticipant.sessionId)),
+      )
+      .run()
+
+    peer.peers.forEach((p) => {
+      const participant = getParticipantContext(p)
+      if (!participant) {
+        peer.send(JSON.stringify({ error: 'Missing participant context' }))
+        return
+      }
+      // Sends each connected peer to new participant
+      peer.send(
+        JSON.stringify({
+          event: 'join',
+          nickname: participant.nickname,
+          participantId: participant.participantId,
+          peerId: p.id,
+          sessionId: participant.sessionId,
+        }),
+      )
+    })
+
+    // Announces new peer to channel
+    peer.publish(
+      newParticipant.sessionId,
+      JSON.stringify({
+        event: 'join',
+        nickname: newParticipant.nickname,
+        participantId: newParticipant.participantId,
+        peerId: peer.id,
+        sessionId: newParticipant.sessionId,
+      }),
+    )
+  },
+  upgrade: (request) => {
+    const cookiesHeader = request.headers.get('Cookie')
+    if (!cookiesHeader) {
+      return
+    }
+
+    const parsedCookies = parse(cookiesHeader)
+    const participantCookie = parsedCookies[PARTICIPANT_SESSION_COOKIE]
+    if (!participantCookie) {
+      return
+    }
+
+    const parsedParticipantCookie = parseParticipantSessionCookie(participantCookie)
+    if (!parsedParticipantCookie.success) {
+      return
+    }
+
+    const participant = db.query.participants
+      .findFirst({
+        where: (fields, { and, eq }) =>
+          and(
+            eq(fields.id, parsedParticipantCookie.data.participantId),
+            eq(fields.sessionId, parsedParticipantCookie.data.sessionId),
+          ),
+      })
+      .sync()
+
+    if (!participant) {
+      return
+    }
+
+    const session = db.query.sessions
+      .findFirst({
+        where: (fields, operators) =>
+          operators.and(
+            operators.eq(fields.id, participant.sessionId),
+            operators.ne(fields.status, SessionStatus.CLOSED),
+          ),
+      })
+      .sync()
+
+    if (!session) {
+      return
+    }
+
+    request.context.participant = {
+      nickname: participant.participantName,
+      participantId: participant.id,
+      role: participant.role,
+      sessionId: participant.sessionId,
+    }
+  },
+})

@@ -4,15 +4,15 @@ Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduct
 
 ## Prerequisites
 
-Make sure you have Bun installed. Visit `https://bun.sh/` for instructions.
+Make sure you have Pnpm installed. Visit `https://pnpm.io/installation` for instructions.
 
 ## Setup
 
 Make sure to install dependencies:
 
 ```bash
-# bun
-bun install
+# pnpm
+pnpm install
 ```
 
 ## Development Server
@@ -20,8 +20,8 @@ bun install
 Start the development server on `http://localhost:3000`:
 
 ```bash
-# bun
-bun run dev
+# pnpm
+pnpm run dev
 ```
 
 ## Production
@@ -29,15 +29,15 @@ bun run dev
 Build the application for production:
 
 ```bash
-# bun
-bun run build
+# pnpm
+pnpm run build
 ```
 
 Locally preview production build:
 
 ```bash
-# bun
-bun run preview
+# pnpm
+pnpm run preview
 ```
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
