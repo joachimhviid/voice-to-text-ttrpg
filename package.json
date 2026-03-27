@@ -38,6 +38,7 @@
     "@iconify-json/heroicons": "^1.2.3",
     "@nuxt/eslint": "^1.15.2",
     "@nuxt/eslint-config": "1.15.2",
+    "@nuxt/test-utils": "^4.0.0",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@tailwindcss/typography": "^0.5.19",
     "@types/better-sqlite3": "^7.6.13",
@@ -52,10 +53,13 @@
     "eslint-plugin-prettier-vue": "5.0.0",
     "eslint-plugin-vue": "^10.8.0",
     "nuxt-typed-router": "4.0.7",
+    "happy-dom": "^20.8.4",
+    "playwright-core": "^1.58.2",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "0.7.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "8.56.0",
+    "vitest": "^4.1.0",
     "vue-eslint-parser": "^10.4.0"
   },
   "packageManager": "pnpm@10.25.0+sha512.5e82639027af37cf832061bcc6d639c219634488e0f2baebe785028a793de7b525ffcd3f7ff574f5e9860654e098fe852ba8ac5dd5cefe1767d23a020a92f501"

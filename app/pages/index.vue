@@ -1,11 +1,20 @@
 <script setup lang="ts">
-const { data: home } = await useAsyncData(() => queryCollection('content').path('/').first())
+const { data: sessions } = await useAsyncData<Session[]>('sessions', () => $fetch('/api/sessions'))
 </script>
 
 <template>
-  <div class="prose prose-invert prose-a:no-underline mx-auto">
-    <ContentRenderer v-if="home" :value="home" />
-    <div v-else>Home not found</div>
+  <div class="prose prose-invert prose-a:no-underline lg:prose-xl">
+    <h1>D&D Sessions</h1>
+    <ul>
+      <li v-for="session in sessions" :key="session.id">
+        <NuxtLink :to="`/sessions/${session.id}`">
+          {{ session.title }}
+        </NuxtLink>
+      </li>
+    </ul>
+    <p>
+      <NuxtLink to="/new-session"> New Session </NuxtLink>
+    </p>
     <div class="flex gap-2">
       <NuxtLink
         to="/host"
