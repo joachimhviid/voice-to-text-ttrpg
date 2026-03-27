@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import type { Session } from '#shared/types/session'
+import type { Wiki } from '#shared/types/wikis'
 
 const route = useRoute()
-const { data: session, refresh } = await useFetch<Session>(`/api/sessions/${route.params.id}`)
+const { data: wikiPage, refresh } = await useFetch<Wiki>(`/api/wikis/${route.params.id}`)
 
 const isEditing = ref(false)
-const editableSession = ref<Partial<Session>>({})
+const editableWiki = ref<Partial<Wiki>>({})
 
 function startEditing() {
-  editableSession.value = { ...session.value }
-  isEditing.value = true
+  if (wikiPage.value) {
+    editableWiki.value = { ...wikiPage.value }
+    isEditing.value = true
+  }
 }
 
 function cancelEditing() {
@@ -17,8 +19,8 @@ function cancelEditing() {
 }
 
 async function saveChanges() {
-  await useFetch(`/api/sessions/${route.params.id}`, {
-    body: editableSession.value,
+  await useFetch(`/api/wikis/${route.params.id}`, {
+    body: editableWiki.value,
     method: 'PUT',
   })
   isEditing.value = false
@@ -27,64 +29,111 @@ async function saveChanges() {
 </script>
 
 <template>
-  <div v-if="session" class="prose lg:prose-xl mx-auto p-4">
+  <div v-if="wikiPage" class="mx-auto max-w-4xl p-4 text-white">
     <div v-if="!isEditing">
-      <h1>{{ session.title }}</h1>
-      <div v-html="session.content"></div>
+      <h1 class="mb-4 text-4xl font-bold">{{ wikiPage.title }}</h1>
+      <div class="prose prose-invert lg:prose-xl mb-6" v-html="wikiPage.content"></div>
 
-      <div v-if="session.combatStats">
-        <h2>Combat Stats</h2>
-        <pre>{{ session.combatStats }}</pre>
+      <div v-if="wikiPage.combatStats" class="mb-4">
+        <h2 class="mb-2 text-2xl font-semibold">Combat Stats</h2>
+        <pre class="rounded-md bg-gray-800 p-4 text-white">{{ wikiPage.combatStats }}</pre>
       </div>
 
-      <div v-if="session.inventoryStats">
-        <h2>Inventory Stats</h2>
-        <pre>{{ session.inventoryStats }}</pre>
+      <div v-if="wikiPage.inventoryStats" class="mb-4">
+        <h2 class="mb-2 text-2xl font-semibold">Inventory Stats</h2>
+        <pre class="rounded-md bg-gray-800 p-4 text-white">{{ wikiPage.inventoryStats }}</pre>
       </div>
 
-      <div v-if="session.relations">
-        <h2>Relations</h2>
-        <pre>{{ session.relations }}</pre>
+      <div v-if="wikiPage.relations" class="mb-4">
+        <h2 class="mb-2 text-2xl font-semibold">Relations</h2>
+        <pre class="rounded-md bg-gray-800 p-4 text-white">{{ wikiPage.relations }}</pre>
       </div>
 
-      <div v-if="session.summary">
-        <h2>Summary</h2>
-        <pre>{{ session.summary }}</pre>
+      <div v-if="wikiPage.summary" class="mb-4">
+        <h2 class="mb-2 text-2xl font-semibold">Summary</h2>
+        <pre class="rounded-md bg-gray-800 p-4 text-white">{{ wikiPage.summary }}</pre>
       </div>
 
-      <button @click="startEditing">Edit</button>
+      <button
+        class="rounded-md bg-blue-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-blue-700"
+        @click="startEditing"
+      >
+        Edit
+      </button>
     </div>
 
-    <div v-else>
-      <h1>Editing Session</h1>
+    <div v-else class="space-y-6">
+      <h1 class="text-3xl font-bold">Editing: {{ editableWiki.title }}</h1>
       <div>
-        <label for="title">Title</label>
-        <input id="title" v-model="editableSession.title" type="text" class="w-full" />
+        <label for="title" class="mb-2 block text-sm font-medium text-white">Title</label>
+        <input
+          id="title"
+          v-model="editableWiki.title"
+          type="text"
+          class="w-full rounded-md border border-gray-600 bg-gray-800 p-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        />
       </div>
       <div>
-        <label for="content">Content</label>
-        <textarea id="content" v-model="editableSession.content" class="w-full" rows="5"></textarea>
+        <label for="content" class="mb-2 block text-sm font-medium text-white">Content</label>
+        <textarea
+          id="content"
+          v-model="editableWiki.content"
+          rows="10"
+          class="w-full rounded-md border border-gray-600 bg-gray-800 p-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        />
       </div>
       <div>
-        <label for="combatStats">Combat Stats</label>
-        <textarea id="combatStats" v-model="editableSession.combatStats" class="w-full" rows="5"></textarea>
+        <label for="combatStats" class="mb-2 block text-sm font-medium text-white">Combat Stats</label>
+        <textarea
+          id="combatStats"
+          v-model="editableWiki.combatStats"
+          rows="5"
+          class="w-full rounded-md border border-gray-600 bg-gray-800 p-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        />
       </div>
       <div>
-        <label for="inventoryStats">Inventory Stats</label>
-        <textarea id="inventoryStats" v-model="editableSession.inventoryStats" class="w-full" rows="5"></textarea>
+        <label for="inventoryStats" class="mb-2 block text-sm font-medium text-white">Inventory Stats</label>
+        <textarea
+          id="inventoryStats"
+          v-model="editableWiki.inventoryStats"
+          rows="5"
+          class="w-full rounded-md border border-gray-600 bg-gray-800 p-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        />
       </div>
       <div>
-        <label for="relations">Relations</label>
-        <textarea id="relations" v-model="editableSession.relations" class="w-full" rows="5"></textarea>
+        <label for="relations" class="mb-2 block text-sm font-medium text-white">Relations</label>
+        <textarea
+          id="relations"
+          v-model="editableWiki.relations"
+          rows="5"
+          class="w-full rounded-md border border-gray-600 bg-gray-800 p-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        />
       </div>
       <div>
-        <label for="summary">Summary</label>
-        <textarea id="summary" v-model="editableSession.summary" class="w-full" rows="5"></textarea>
+        <label for="summary" class="mb-2 block text-sm font-medium text-white">Summary</label>
+        <textarea
+          id="summary"
+          v-model="editableWiki.summary"
+          rows="5"
+          class="w-full rounded-md border border-gray-600 bg-gray-800 p-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        />
       </div>
 
-      <button @click="saveChanges">Save</button>
-      <button @click="cancelEditing">Cancel</button>
+      <div class="flex justify-end space-x-4">
+        <button
+          class="rounded-md bg-gray-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-gray-700"
+          @click="cancelEditing"
+        >
+          Cancel
+        </button>
+        <button
+          class="rounded-md bg-blue-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-blue-700"
+          @click="saveChanges"
+        >
+          Save Changes
+        </button>
+      </div>
     </div>
   </div>
-  <div v-else>Loading...</div>
+  <div v-else class="p-8 text-center text-white">Loading wiki page...</div>
 </template>
