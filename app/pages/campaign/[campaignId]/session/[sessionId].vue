@@ -2,10 +2,10 @@
 import { sessionEventSchema } from '#imports'
 import { match } from 'ts-pattern'
 
-const { params } = useRoute('session-id')
+const { params } = useRoute('campaign-campaignId-session-sessionId')
 const { isHost, recordingState } = useRecordingSession()
 
-const { data } = await useFetch(`/api/sessions/${params.id}` as '/api/sessions/:id')
+const { data } = await useFetch(`/api/sessions/${params.sessionId}` as '/api/sessions/:id')
 const { copied, copy } = useClipboard()
 
 type Participant = {
