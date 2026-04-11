@@ -1,15 +1,22 @@
 <script setup lang="ts">
 import type { Wiki } from '#shared/types/wikis'
+import WikiSection from '~/components/WikiSection.vue'
+import CharacterGraph from '~/components/CharacterGraph.vue'
 
 const route = useRoute()
-const { data: wikiPage, refresh } = await useFetch<Wiki>(`/api/wikis/${route.params.id}`)
+
+// Fetch both the wiki data and the graph data for this specific wiki in parallel
+const [{ data: wikiPage, refresh: refreshWiki }, { data: graphData, refresh: refreshGraph }] = await Promise.all([
+  useFetch<Wiki>(`/api/wikis/${route.params.id}`),
+  useFetch<{ nodes: any[], edges: any[] }>(`/api/wikis/${route.params.id}/graph`)
+])
 
 const isEditing = ref(false)
 const editableWiki = ref<Partial<Wiki>>({})
 
 function startEditing() {
   if (wikiPage.value) {
-    editableWiki.value = { ...wikiPage.value }
+    editableWiki.value = JSON.parse(JSON.stringify(wikiPage.value))
     isEditing.value = true
   }
 }
@@ -24,7 +31,7 @@ async function saveChanges() {
     method: 'PUT',
   })
   isEditing.value = false
-  await refresh()
+  await refreshWiki()
 }
 </script>
 
@@ -34,28 +41,20 @@ async function saveChanges() {
       <h1 class="mb-4 text-4xl font-bold">{{ wikiPage.title }}</h1>
       <div class="prose prose-invert lg:prose-xl mb-6" v-html="wikiPage.content"></div>
 
-      <div v-if="wikiPage.combatStats" class="mb-4">
-        <h2 class="mb-2 text-2xl font-semibold">Combat Stats</h2>
-        <pre class="rounded-md bg-gray-800 p-4 text-white">{{ wikiPage.combatStats }}</pre>
-      </div>
+      <WikiSection title="Combat Stats" :content="wikiPage.combatStats" :is-editing="false" />
+      <WikiSection title="Inventory Stats" :content="wikiPage.inventoryStats" :is-editing="false" />
 
-      <div v-if="wikiPage.inventoryStats" class="mb-4">
-        <h2 class="mb-2 text-2xl font-semibold">Inventory Stats</h2>
-        <pre class="rounded-md bg-gray-800 p-4 text-white">{{ wikiPage.inventoryStats }}</pre>
-      </div>
+      <!-- Replaced the text-based Relations section with the Graph Component -->
+      <CharacterGraph
+        v-if="graphData"
+        :nodes="graphData.nodes"
+        :edges="graphData.edges"
+      />
 
-      <div v-if="wikiPage.relations" class="mb-4">
-        <h2 class="mb-2 text-2xl font-semibold">Relations</h2>
-        <pre class="rounded-md bg-gray-800 p-4 text-white">{{ wikiPage.relations }}</pre>
-      </div>
-
-      <div v-if="wikiPage.summary" class="mb-4">
-        <h2 class="mb-2 text-2xl font-semibold">Summary</h2>
-        <pre class="rounded-md bg-gray-800 p-4 text-white">{{ wikiPage.summary }}</pre>
-      </div>
+      <WikiSection title="Summary" :content="wikiPage.summary" :is-editing="false" />
 
       <button
-        class="rounded-md bg-blue-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-blue-700"
+        class="rounded-md bg-blue-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-blue-700 mt-6"
         @click="startEditing"
       >
         Edit
@@ -82,42 +81,34 @@ async function saveChanges() {
           class="w-full rounded-md border border-gray-600 bg-gray-800 p-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
         />
       </div>
-      <div>
-        <label for="combatStats" class="mb-2 block text-sm font-medium text-white">Combat Stats</label>
-        <textarea
-          id="combatStats"
-          v-model="editableWiki.combatStats"
-          rows="5"
-          class="w-full rounded-md border border-gray-600 bg-gray-800 p-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-        />
-      </div>
-      <div>
-        <label for="inventoryStats" class="mb-2 block text-sm font-medium text-white">Inventory Stats</label>
-        <textarea
-          id="inventoryStats"
-          v-model="editableWiki.inventoryStats"
-          rows="5"
-          class="w-full rounded-md border border-gray-600 bg-gray-800 p-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-        />
-      </div>
-      <div>
-        <label for="relations" class="mb-2 block text-sm font-medium text-white">Relations</label>
-        <textarea
-          id="relations"
-          v-model="editableWiki.relations"
-          rows="5"
-          class="w-full rounded-md border border-gray-600 bg-gray-800 p-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-        />
-      </div>
-      <div>
-        <label for="summary" class="mb-2 block text-sm font-medium text-white">Summary</label>
-        <textarea
-          id="summary"
-          v-model="editableWiki.summary"
-          rows="5"
-          class="w-full rounded-md border border-gray-600 bg-gray-800 p-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-        />
-      </div>
+
+      <WikiSection
+        title="Combat Stats"
+        :is-editing="true"
+        :content="editableWiki.combatStats"
+        @update:content="newValue => (editableWiki.combatStats = newValue)"
+      />
+      <WikiSection
+        title="Inventory Stats"
+        :is-editing="true"
+        :content="editableWiki.inventoryStats"
+        @update:content="newValue => (editableWiki.inventoryStats = newValue)"
+      />
+
+      <!-- Keep the text-based Relations field available while editing in case they want notes -->
+      <WikiSection
+        title="Relations (Text Notes)"
+        :is-editing="true"
+        :content="editableWiki.relations"
+        @update:content="newValue => (editableWiki.relations = newValue)"
+      />
+
+      <WikiSection
+        title="Summary"
+        :is-editing="true"
+        :content="editableWiki.summary"
+        @update:content="newValue => (editableWiki.summary = newValue)"
+      />
 
       <div class="flex justify-end space-x-4">
         <button

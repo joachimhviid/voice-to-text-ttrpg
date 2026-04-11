@@ -50,3 +50,21 @@ export const wiki = sqliteTable('wiki', {
   summary: text('summary'),
   title: text('title').notNull(),
 })
+
+export const characters = sqliteTable('characters', {
+  id: int('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  imageUrl: text('image_url').default('https://placehold.co/100x100?text=Char'),
+  wikiId: int('wiki_id').references(() => wiki.id),
+})
+
+export const characterRelationships = sqliteTable('character_relationships', {
+  id: int('id').primaryKey({ autoIncrement: true }),
+  character1Id: int('character1_id')
+    .references(() => characters.id)
+    .notNull(),
+  character2Id: int('character2_id')
+    .references(() => characters.id)
+    .notNull(),
+  score: int('score').notNull().default(0),
+})
