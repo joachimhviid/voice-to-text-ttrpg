@@ -36,7 +36,7 @@ const buttonClasses = computed(() => {
   <component
     :is="link ? NuxtLink : 'button'"
     :to="link"
-    class="inline-flex cursor-pointer items-center gap-2 rounded px-4 py-2 transition disabled:cursor-not-allowed disabled:text-gray-200/50"
+    class="inline-flex cursor-pointer items-center justify-center gap-2 rounded px-4 py-2 transition disabled:cursor-not-allowed disabled:text-gray-200/50"
     :class="buttonClasses"
   >
     <Icon v-if="icon" :name="icon" />
