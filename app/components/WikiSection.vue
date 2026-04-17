@@ -16,7 +16,7 @@ function onInput(event: Event) {
   <div class="mb-4">
     <h2 class="mb-2 text-2xl font-semibold">{{ title }}</h2>
     <div v-if="!isEditing">
-      <pre v-if="content" class="rounded-md bg-gray-800 p-4 text-white">{{ content }}</pre>
+      <pre v-if="content" class="break-words whitespace-pre-wrap rounded-md bg-gray-800 p-4 text-white">{{ content }}</pre>
       <p v-else class="text-gray-400 italic">No content provided.</p>
     </div>
     <div v-else>
