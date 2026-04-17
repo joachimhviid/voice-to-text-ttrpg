@@ -45,6 +45,7 @@ export const wiki = sqliteTable('wiki', {
   combatStats: text('combat_stats'),
   content: text('content').notNull(),
   id: int('id').primaryKey({ autoIncrement: true }),
+  imageUrl: text('image_url'),
   inventoryStats: text('inventory_stats'),
   relations: text('relations'),
   summary: text('summary'),

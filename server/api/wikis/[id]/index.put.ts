@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { combatStats, content, inventoryStats, relations, summary, title } = body
+  const { combatStats, content, imageUrl, inventoryStats, relations, summary, title } = body
 
   if (!title || !content) {
     throw createError({
@@ -27,6 +27,7 @@ export default defineEventHandler(async (event) => {
     .set({
       combatStats,
       content,
+      imageUrl,
       inventoryStats,
       relations,
       summary,

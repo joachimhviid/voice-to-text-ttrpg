@@ -181,8 +181,6 @@ const handleNodeClick = (node: CharacterNode) => {
 
 <template>
   <div class="mb-4">
-    <h2 class="mb-2 text-2xl font-semibold">Character Relationships</h2>
-
     <div v-if="props.nodes.length === 0" class="mb-2 text-sm text-yellow-400 italic">
       Showing placeholder data. Add characters to this wiki to see the actual graph.
     </div>
@@ -227,6 +225,7 @@ const handleNodeClick = (node: CharacterNode) => {
           :key="node.id"
           class="group absolute flex -translate-x-1/2 -translate-y-1/2 transform cursor-pointer flex-col items-center"
           :style="{ left: `${node.x}px`, top: `${node.y}px` }"
+          :title="!node.wikiId ? 'This character doesn\'t have a page yet' : ''"
           @click="handleNodeClick(node)"
         >
           <img

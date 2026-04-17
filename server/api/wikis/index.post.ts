@@ -4,7 +4,7 @@ import { wiki } from '#server/db/schema'
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
 
-  const { combatStats, content, inventoryStats, relations, summary, title } = body
+  const { combatStats, content, imageUrl, inventoryStats, relations, summary, title } = body
 
   if (!title || !content) {
     throw createError({
@@ -18,6 +18,7 @@ export default defineEventHandler(async (event) => {
     .values({
       combatStats,
       content,
+      imageUrl,
       inventoryStats,
       relations,
       summary,
