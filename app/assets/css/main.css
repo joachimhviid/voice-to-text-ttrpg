@@ -1,2 +1,8 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+
+html {
+  scrollbar-gutter: stable;
+  scrollbar-width: none;
+  background-color: var(--color-gray-950);
+}

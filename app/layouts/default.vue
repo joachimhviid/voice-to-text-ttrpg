@@ -1,7 +1,10 @@
 <script setup lang="ts"></script>
 
 <template>
-  <div class="min-h-screen bg-gray-950 text-white">
-    <slot />
+  <div class="flex min-h-screen flex-col text-white">
+    <UiNavigation />
+    <div class="grow">
+      <slot />
+    </div>
   </div>
 </template>

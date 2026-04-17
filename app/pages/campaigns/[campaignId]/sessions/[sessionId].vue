@@ -2,7 +2,7 @@
 import { sessionEventSchema } from '#imports'
 import { match } from 'ts-pattern'
 
-const { params } = useRoute('campaign-campaignId-session-sessionId')
+const { params } = useRoute('campaigns-campaignId-sessions-sessionId')
 const { isHost, recordingState } = useRecordingSession()
 
 const { data } = await useFetch(`/api/sessions/${params.sessionId}` as '/api/sessions/:id')
