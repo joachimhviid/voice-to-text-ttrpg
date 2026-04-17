@@ -1,3 +1,8 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+const { params } = useRoute('campaigns-campaignId')
+const { data: campaign } = useFetch(`/api/campaigns/${params.campaignId}` as '/api/campaigns/:campaignId')
+</script>
 
-<template><div>this campaign</div></template>
+<template>
+  <div>{{ campaign }}</div>
+</template>
