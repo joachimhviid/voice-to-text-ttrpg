@@ -12,7 +12,7 @@ const create = () => {
 </script>
 
 <template>
-  <div class="mx-auto flex h-svh max-w-5xl items-center justify-center">
+  <div class="mx-auto flex max-w-5xl items-center justify-center">
     <PanelContainer>
       <h1 class="mb-4 text-2xl font-bold">Host a new session</h1>
       <p class="mb-4">Start a new recording session. Participants will join your session using an invite code.</p>

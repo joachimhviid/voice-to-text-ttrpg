@@ -18,6 +18,7 @@ export default defineNuxtConfig({
   },
   vite: {
     optimizeDeps: {
+      include: ['ts-pattern', 'date-fns'],
       include: ['@vue/devtools-core', '@vue/devtools-kit'],
     },
     plugins: [tailwindcss()],

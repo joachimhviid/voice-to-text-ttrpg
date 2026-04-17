@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import type { NuxtRoute } from '@typed-router/__router'
+import type { RoutesNamesList } from '@typed-router/__routes'
 import { match } from 'ts-pattern'
+import { NuxtLink } from '#components'
 
 const props = defineProps<{
   icon?: string
+  link?: NuxtRoute<RoutesNamesList, string>
   variant: 'destroy' | 'primary' | 'secondary' | 'tertiary'
 }>()
 
@@ -29,11 +33,13 @@ const buttonClasses = computed(() => {
 </script>
 
 <template>
-  <button
-    class="flex cursor-pointer items-center gap-2 rounded px-4 py-2 transition disabled:cursor-not-allowed disabled:text-gray-200/50"
+  <component
+    :is="link ? NuxtLink : 'button'"
+    :to="link"
+    class="inline-flex cursor-pointer items-center gap-2 rounded px-4 py-2 transition disabled:cursor-not-allowed disabled:text-gray-200/50"
     :class="buttonClasses"
   >
     <Icon v-if="icon" :name="icon" />
     <slot />
-  </button>
+  </component>
 </template>
