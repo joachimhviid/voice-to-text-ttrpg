@@ -3,7 +3,7 @@ import { sessionEventSchema } from '#imports'
 import { match } from 'ts-pattern'
 
 const { params } = useRoute('campaigns-campaignId-sessions-sessionId')
-const { isHost, recordingState } = useRecordingSession()
+const { isHost, recordingState, setSessionId, release } = useRecordingSession()
 
 const { data } = await useFetch(`/api/sessions/${params.sessionId}` as '/api/sessions/:id')
 const { copied, copy } = useClipboard()
@@ -36,7 +36,6 @@ const { data: wsData, open } = useWebSocket('/ws/session', {
       }
 
       participants.value.push({
-        // isUser: event.isUser,
         nickname: event.nickname,
         participantId: event.participantId,
         peerId: event.peerId,
@@ -46,7 +45,12 @@ const { data: wsData, open } = useWebSocket('/ws/session', {
 })
 
 onMounted(() => {
+  setSessionId(params.sessionId)
   open()
+})
+
+onUnmounted(() => {
+  release()
 })
 </script>
 
