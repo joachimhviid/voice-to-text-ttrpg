@@ -107,6 +107,7 @@ export default defineWebSocketHandler({
         }
 
         saveTranscript(participant, Date.now(), event.transcript)
+        peer.send(JSON.stringify({ recorded: event.transcript }))
       })
     // .with({ action: 'setNickname' }, (event) => {
     //   // TODO: remove this action probably
