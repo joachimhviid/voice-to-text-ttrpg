@@ -47,6 +47,7 @@ export default defineEventHandler(async (event) => {
   )
 
   return {
+    campaignId: session.campaignId,
     id: session.id,
     participantId: participant.id,
   }
