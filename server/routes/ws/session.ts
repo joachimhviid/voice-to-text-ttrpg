@@ -6,8 +6,9 @@ import { PARTICIPANT_SESSION_COOKIE, parseParticipantSessionCookie } from '#shar
 import { and, eq } from 'drizzle-orm'
 import { match } from 'ts-pattern'
 import { parse } from 'cookie-es'
+import { saveTranscript } from '#server/utils/saveTranscript'
 
-type PeerParticipantContext = {
+export type PeerParticipantContext = {
   nickname: string
   participantId: number
   role: ParticipantRole
@@ -44,9 +45,11 @@ export default defineWebSocketHandler({
       return
     }
 
+    const participant = getParticipantContext(peer)
+
     match(result.data)
       .with({ action: 'join' }, (event) => {
-        const participant = getParticipantContext(peer)
+        // const participant = getParticipantContext(peer)
         if (!participant) {
           peer.send(JSON.stringify({ error: 'Unauthorized websocket join' }))
           peer.close(1008)
@@ -75,41 +78,66 @@ export default defineWebSocketHandler({
           }),
         )
       })
-      .with({ action: 'setNickname' }, (event) => {
-        // TODO: remove this action probably
-        const participant = getParticipantContext(peer)
+      .with({ action: 'requestStartRecording' }, (_event) => {
         if (!participant) {
-          peer.send(JSON.stringify({ error: 'Unauthorized websocket nickname update' }))
+          peer.send(JSON.stringify({ error: 'Participant not found' }))
           return
         }
 
-        if (participant.sessionId !== event.sessionId) {
-          peer.send(JSON.stringify({ error: 'Session mismatch for nickname update' }))
-          return
-        }
-
-        db.update(participants)
-          .set({ participantName: event.nickname })
-          .where(and(eq(participants.id, participant.participantId), eq(participants.sessionId, event.sessionId)))
-          .run()
-
-        participant.nickname = event.nickname
-
-        peer.publish(
-          event.sessionId,
-          JSON.stringify({
-            event: 'setNickname',
-            nickname: event.nickname,
-            participantId: participant.participantId,
-            userId: peer.id,
-          }),
-        )
+        peer.publish(participant.sessionId, JSON.stringify({ event: 'startRecording' }))
+        peer.send(JSON.stringify({ event: 'startRecording' }))
       })
-      .with({ action: 'startRecording' }, (_event) => {})
-      .with({ action: 'stopRecording' }, (_event) => {})
+      .with({ action: 'requestStopRecording' }, (_event) => {
+        if (!participant) {
+          peer.send(JSON.stringify({ error: 'Participant not found' }))
+          return
+        }
+
+        peer.publish(participant.sessionId, JSON.stringify({ event: 'stopRecording' }))
+        peer.send(JSON.stringify({ event: 'stopRecording' }))
+      })
       .with({ action: 'closeSession' }, (_event) => {
         peer.close(1000)
       })
+      .with({ action: 'speaking' }, (event) => {
+        // append speech to file
+        if (!participant) {
+          peer.send(JSON.stringify({ error: 'Participant not found' }))
+          return
+        }
+
+        saveTranscript(participant, Date.now(), event.transcript)
+      })
+    // .with({ action: 'setNickname' }, (event) => {
+    //   // TODO: remove this action probably
+    //   const participant = getParticipantContext(peer)
+    //   if (!participant) {
+    //     peer.send(JSON.stringify({ error: 'Unauthorized websocket nickname update' }))
+    //     return
+    //   }
+
+    //   if (participant.sessionId !== event.sessionId) {
+    //     peer.send(JSON.stringify({ error: 'Session mismatch for nickname update' }))
+    //     return
+    //   }
+
+    //   db.update(participants)
+    //     .set({ participantName: event.nickname })
+    //     .where(and(eq(participants.id, participant.participantId), eq(participants.sessionId, event.sessionId)))
+    //     .run()
+
+    //   participant.nickname = event.nickname
+
+    //   peer.publish(
+    //     event.sessionId,
+    //     JSON.stringify({
+    //       event: 'setNickname',
+    //       nickname: event.nickname,
+    //       participantId: participant.participantId,
+    //       userId: peer.id,
+    //     }),
+    //   )
+    // })
   },
   open: (peer) => {
     console.log('Peer connected', peer.id)

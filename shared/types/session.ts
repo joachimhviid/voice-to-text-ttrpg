@@ -12,16 +12,17 @@ export const sessionActionSchema = z.discriminatedUnion('action', [
     sessionId: z.string().min(1),
   }),
   z.object({
-    action: z.literal('startRecording'),
-    sessionId: z.string().min(1),
+    action: z.literal('requestStartRecording'),
   }),
   z.object({
-    action: z.literal('stopRecording'),
-    sessionId: z.string().min(1),
+    action: z.literal('requestStopRecording'),
   }),
   z.object({
     action: z.literal('closeSession'),
-    sessionId: z.string().min(1),
+  }),
+  z.object({
+    action: z.literal('speaking'),
+    transcript: z.string().min(1),
   }),
 ])
 
@@ -35,10 +36,13 @@ export const sessionEventSchema = z.discriminatedUnion('event', [
     sessionId: z.string().min(1),
   }),
   z.object({
-    event: z.literal('setNickname'),
-    nickname: z.string().min(1),
-    participantId: z.number().int().positive(),
-    userId: z.string().min(1),
+    event: z.literal('startRecording'),
+  }),
+  z.object({
+    event: z.literal('stopRecording'),
+  }),
+  z.object({
+    event: z.literal('pauseRecording'),
   }),
 ])
 
