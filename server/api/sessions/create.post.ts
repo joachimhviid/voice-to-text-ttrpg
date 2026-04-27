@@ -5,13 +5,14 @@ import { generateInviteCode } from '#server/utils/generateCode'
 import { PARTICIPANT_SESSION_COOKIE, toParticipantSessionCookie } from '#shared/utils/participantSessionCookie'
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody<{ nickname: string }>(event)
+  const body = await readBody<{ campaignId: number; nickname: string }>(event)
 
   const inviteCode = generateInviteCode()
   const id = createId()
 
   db.insert(sessions)
     .values({
+      campaignId: body.campaignId,
       code: inviteCode,
       id,
     })

@@ -18,19 +18,20 @@ export const useRecordingSession = () => {
     recordingState.value = 'inactive'
   }
 
-  const createSession = async (nickname: string) => {
+  const createSession = async (nickname: string, campaignId: number) => {
     loading.value = true
 
     try {
       const res = await $fetch('/api/sessions/create', {
         body: {
+          campaignId,
           nickname,
         },
         method: 'POST',
       })
       isHostCookie.value = true
 
-      navigateTo(`/session/${res.id}`)
+      navigateTo(`/campaigns/${campaignId}/sessions/${res.id}`)
     } catch (error) {
       console.error(error)
       isHostCookie.value = false
@@ -55,7 +56,7 @@ export const useRecordingSession = () => {
         method: 'POST',
       })
 
-      navigateTo(`/session/${res.id}`)
+      navigateTo(`/campaigns/${res.campaignId}/sessions/${res.id}`)
     } catch (error) {
       console.error(error)
     } finally {

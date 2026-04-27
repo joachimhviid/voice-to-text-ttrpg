@@ -18,7 +18,7 @@ export default defineNuxtConfig({
   },
   vite: {
     optimizeDeps: {
-      include: ['ts-pattern', 'date-fns'],
+      include: ['ts-pattern', 'date-fns', 'zod'],
     },
     plugins: [tailwindcss()],
   },
