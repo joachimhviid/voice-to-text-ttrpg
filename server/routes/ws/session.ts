@@ -1,12 +1,12 @@
 import { db } from '#server/db'
 import type { ParticipantRole } from '#server/db/schema'
-import { participants, SessionStatus } from '#server/db/schema'
+import { participants, sessions, SessionStatus } from '#server/db/schema'
 import { sessionActionSchema } from '#shared/types/session'
 import { PARTICIPANT_SESSION_COOKIE, parseParticipantSessionCookie } from '#shared/utils/participantSessionCookie'
 import { and, eq } from 'drizzle-orm'
 import { match } from 'ts-pattern'
 import { parse } from 'cookie-es'
-import { saveTranscript } from '#server/utils/saveTranscript'
+import { combineTranscripts, saveTranscript } from '#server/utils/saveTranscript'
 
 export type PeerParticipantContext = {
   nickname: string
@@ -86,6 +86,10 @@ export default defineWebSocketHandler({
 
         peer.publish(participant.sessionId, JSON.stringify({ event: 'startRecording' }))
         peer.send(JSON.stringify({ event: 'startRecording' }))
+        db.update(sessions)
+          .set({ status: SessionStatus.INPROGRESS })
+          .where(eq(sessions.id, participant.sessionId))
+          .run()
       })
       .with({ action: 'requestStopRecording' }, (_event) => {
         if (!participant) {
@@ -97,6 +101,15 @@ export default defineWebSocketHandler({
         peer.send(JSON.stringify({ event: 'stopRecording' }))
       })
       .with({ action: 'closeSession' }, (_event) => {
+        if (!participant) {
+          peer.send(JSON.stringify({ error: 'Participant not found' }))
+          return
+        }
+
+        combineTranscripts(participant)
+        db.update(sessions).set({ status: SessionStatus.CLOSED }).where(eq(sessions.id, participant.sessionId)).run()
+
+        peer.peers.forEach((p) => p.close(1000))
         peer.close(1000)
       })
       .with({ action: 'speaking' }, (event) => {
@@ -107,38 +120,9 @@ export default defineWebSocketHandler({
         }
 
         saveTranscript(participant, Date.now(), event.transcript)
+        // This sends the recorded text back to the client for easier debugging
         peer.send(JSON.stringify({ recorded: event.transcript }))
       })
-    // .with({ action: 'setNickname' }, (event) => {
-    //   // TODO: remove this action probably
-    //   const participant = getParticipantContext(peer)
-    //   if (!participant) {
-    //     peer.send(JSON.stringify({ error: 'Unauthorized websocket nickname update' }))
-    //     return
-    //   }
-
-    //   if (participant.sessionId !== event.sessionId) {
-    //     peer.send(JSON.stringify({ error: 'Session mismatch for nickname update' }))
-    //     return
-    //   }
-
-    //   db.update(participants)
-    //     .set({ participantName: event.nickname })
-    //     .where(and(eq(participants.id, participant.participantId), eq(participants.sessionId, event.sessionId)))
-    //     .run()
-
-    //   participant.nickname = event.nickname
-
-    //   peer.publish(
-    //     event.sessionId,
-    //     JSON.stringify({
-    //       event: 'setNickname',
-    //       nickname: event.nickname,
-    //       participantId: participant.participantId,
-    //       userId: peer.id,
-    //     }),
-    //   )
-    // })
   },
   open: (peer) => {
     console.log('Peer connected', peer.id)

@@ -23,6 +23,13 @@ const {
   send,
 } = useWebSocket('/ws/session', {
   immediate: false,
+  onDisconnected: (ws, event) => {
+    if (event.code === 1000) {
+      // session was closed by the host
+      sessionStatusText.value = 'Session has ended, redirecting in 3 seconds...'
+      setTimeout(() => navigateTo(`/campaigns/${params.campaignId}`), 3000)
+    }
+  },
   onMessage: (ws, event) => {
     const result = sessionEventSchema.safeParse(JSON.parse(event.data))
     if (!result.success) {
@@ -78,6 +85,10 @@ const onStop = () => {
   send(JSON.stringify({ action: 'requestStopRecording' }))
 }
 
+const onClose = () => {
+  send(JSON.stringify({ action: 'closeSession' }))
+}
+
 watch([speech.result, speech.isFinal], ([result, isFinal]) => {
   console.log(result, isFinal)
 
@@ -85,6 +96,8 @@ watch([speech.result, speech.isFinal], ([result, isFinal]) => {
     send(JSON.stringify({ action: 'speaking', transcript: result }))
   }
 })
+
+const sessionStatusText = ref('Waiting for session to start')
 </script>
 
 <template>
@@ -122,7 +135,7 @@ watch([speech.result, speech.isFinal], ([result, isFinal]) => {
         </div>
       </div>
       <div>
-        <p class="animate-pulse text-center" style="animation-duration: 5000ms">Waiting for session to start</p>
+        <p class="animate-pulse text-center" style="animation-duration: 5000ms">{{ sessionStatusText }}</p>
         <ClientOnly>
           <p v-if="!isRecordingSupported" class="text-center text-red-500">
             This browser is not supported by our platform. Please use Chrome or Edge.
@@ -136,7 +149,7 @@ watch([speech.result, speech.isFinal], ([result, isFinal]) => {
         </div>
       </div>
       <div v-if="isHost" class="border-t border-white/20 pt-4">
-        <SessionHostControls @start="onStart" @stop="onStop" />
+        <SessionHostControls @start="onStart" @stop="onStop" @close="onClose" />
       </div>
       <div class="absolute inset-x-0 top-full p-2">{{ wsData }}</div>
     </PanelContainer>
