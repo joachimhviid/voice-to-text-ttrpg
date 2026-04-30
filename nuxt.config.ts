@@ -21,5 +21,8 @@ export default defineNuxtConfig({
       include: ['ts-pattern', 'date-fns', 'zod'],
     },
     plugins: [tailwindcss()],
+    server: {
+      allowedHosts: ['.ngrok-free.app'],
+    },
   },
 })

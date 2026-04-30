@@ -3,19 +3,24 @@ export const useRecordingSession = () => {
 
   const loading = ref(false)
 
-  // TODO: @Casper hook up media recorder state here
+  const speech = useSpeechRecognition({
+    lang: 'en-US',
+  })
+
+  watch(speech.isListening, (value) => (recordingState.value = value ? 'recording' : 'inactive'))
+
   const recordingState = useState<RecordingState>('recording-state', () => 'inactive')
 
   const startRecording = () => {
-    recordingState.value = 'recording'
+    speech.start()
   }
 
   const pauseRecording = () => {
-    recordingState.value = 'paused'
+    speech.stop()
   }
 
   const stopRecording = () => {
-    recordingState.value = 'inactive'
+    speech.stop()
   }
 
   const createSession = async (nickname: string, campaignId: number) => {
@@ -69,11 +74,14 @@ export const useRecordingSession = () => {
   return {
     closeSession,
     createSession,
+
     isHost,
+    isRecordingSupported: speech.isSupported,
     joinSession,
     loading,
     pauseRecording,
     recordingState,
+    speech,
     startRecording,
     stopRecording,
   }
