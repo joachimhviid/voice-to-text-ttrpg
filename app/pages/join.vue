@@ -11,7 +11,7 @@ const joinSession = () => {
   if (!nickname.value || nickname.value.trim() === '') {
     return
   }
-  joinRecordingSession(inviteCode.value, nickname.value)
+  joinRecordingSession(inviteCode.value.toUpperCase(), nickname.value)
 }
 </script>
 

@@ -3,7 +3,7 @@ import { sessionEventSchema } from '#imports'
 import { match } from 'ts-pattern'
 
 const { params } = useRoute('campaigns-campaignId-sessions-sessionId')
-const { isHost, recordingState } = useRecordingSession()
+const { isHost, isRecordingSupported, recordingState, speech, startRecording, stopRecording } = useRecordingSession()
 
 const { data } = await useFetch(`/api/sessions/${params.sessionId}` as '/api/sessions/:id')
 const { copied, copy } = useClipboard()
@@ -16,8 +16,20 @@ type Participant = {
 
 const participants = ref<Participant[]>([])
 
-const { data: wsData, open } = useWebSocket('/ws/session', {
+const {
+  close,
+  data: wsData,
+  open,
+  send,
+} = useWebSocket('/ws/session', {
   immediate: false,
+  onDisconnected: (ws, event) => {
+    if (event.code === 1000) {
+      // session was closed by the host
+      sessionStatusText.value = 'Session has ended, redirecting in 3 seconds...'
+      setTimeout(() => navigateTo(`/campaigns/${params.campaignId}`), 3000)
+    }
+  },
   onMessage: (ws, event) => {
     const result = sessionEventSchema.safeParse(JSON.parse(event.data))
     if (!result.success) {
@@ -25,29 +37,67 @@ const { data: wsData, open } = useWebSocket('/ws/session', {
       console.error(result.error)
       return
     }
-    match(result.data).with({ event: 'join' }, (event) => {
-      const existingParticipant = participants.value.find(
-        (participant) => participant.participantId === event.participantId,
-      )
-      if (existingParticipant) {
-        existingParticipant.nickname = event.nickname
-        existingParticipant.peerId = event.peerId
-        return
-      }
+    match(result.data)
+      .with({ event: 'join' }, (event) => {
+        const existingParticipant = participants.value.find(
+          (participant) => participant.participantId === event.participantId,
+        )
+        if (existingParticipant) {
+          existingParticipant.nickname = event.nickname
+          existingParticipant.peerId = event.peerId
+          return
+        }
 
-      participants.value.push({
-        // isUser: event.isUser,
-        nickname: event.nickname,
-        participantId: event.participantId,
-        peerId: event.peerId,
+        participants.value.push({
+          nickname: event.nickname,
+          participantId: event.participantId,
+          peerId: event.peerId,
+        })
       })
-    })
+      .with({ event: 'startRecording' }, (_event) => {
+        if (!isRecordingSupported.value) {
+          return
+        }
+        startRecording()
+      })
+      .with({ event: 'stopRecording' }, (_event) => {
+        if (!isRecordingSupported.value) {
+          return
+        }
+        stopRecording()
+      })
   },
 })
 
 onMounted(() => {
   open()
 })
+
+onUnmounted(() => {
+  close()
+})
+
+const onStart = () => {
+  send(JSON.stringify({ action: 'requestStartRecording' }))
+}
+
+const onStop = () => {
+  send(JSON.stringify({ action: 'requestStopRecording' }))
+}
+
+const onClose = () => {
+  send(JSON.stringify({ action: 'closeSession' }))
+}
+
+watch([speech.result, speech.isFinal], ([result, isFinal]) => {
+  console.log(result, isFinal)
+
+  if (isFinal) {
+    send(JSON.stringify({ action: 'speaking', transcript: result }))
+  }
+})
+
+const sessionStatusText = ref('Waiting for session to start')
 </script>
 
 <template>
@@ -85,7 +135,12 @@ onMounted(() => {
         </div>
       </div>
       <div>
-        <p class="animate-pulse text-center" style="animation-duration: 5000ms">Waiting for session to start</p>
+        <p class="animate-pulse text-center" style="animation-duration: 5000ms">{{ sessionStatusText }}</p>
+        <ClientOnly>
+          <p v-if="!isRecordingSupported" class="text-center text-red-500">
+            This browser is not supported by our platform. Please use Chrome or Edge.
+          </p>
+        </ClientOnly>
       </div>
       <div class="mb-4">
         <h2 class="mb-4 text-2xl font-bold">Participants</h2>
@@ -94,7 +149,7 @@ onMounted(() => {
         </div>
       </div>
       <div v-if="isHost" class="border-t border-white/20 pt-4">
-        <SessionHostControls />
+        <SessionHostControls @start="onStart" @stop="onStop" @close="onClose" />
       </div>
       <div class="absolute inset-x-0 top-full p-2">{{ wsData }}</div>
     </PanelContainer>
