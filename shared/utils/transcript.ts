@@ -1,7 +1,8 @@
 import { appendFile, mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { PeerParticipantContext } from '../routes/ws/session'
+import type { PeerParticipantContext } from '#shared/types/session'
 import { z } from 'zod'
+import { diff } from 'diff-match-patch-es'
 
 const transcriptLineSchema = z.object({
   nickname: z.string(),
@@ -12,7 +13,7 @@ const transcriptLineSchema = z.object({
   transcript: z.string(),
 })
 
-type TranscriptLine = z.infer<typeof transcriptLineSchema>
+export type TranscriptLine = z.infer<typeof transcriptLineSchema>
 
 const TRANSCRIPT_DIRECTORY = join(process.cwd(), '.data', 'storage', 'transcripts')
 const MASTER_TRANSCRIPT_FILE = 'master.jsonl'
@@ -145,4 +146,18 @@ export async function compileTranscript(sessionId: string) {
   }
   const compiledMasterTranscriptPath = join(sessionDirectory, COMPILED_MASTER_TRANSCRIPT_FILE)
   await writeFile(compiledMasterTranscriptPath, compiledMasterTranscriptLines.join('\n'), { encoding: 'utf8' })
+}
+
+export function cleanTranscript(lines: TranscriptLine[]): TranscriptLine[] {
+  if (lines.length < 2) {
+    console.info('Only 1 line. No cleaning necessary')
+    return lines
+  }
+
+  lines.reduce((prevLine, curLine, index) => {})
+  // for (let index = 1; index < lines.length; index++) {
+  //   const prevLine = lines[index]
+  //   const line = lines[index]
+  // }
+  return []
 }

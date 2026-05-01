@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { ParticipantRole } from '#server/db/schema'
 
 export const sessionActionSchema = z.discriminatedUnion('action', [
   z.object({
@@ -54,4 +55,11 @@ export type Session = {
   relations?: string
   summary?: string
   title: string
+}
+
+export type PeerParticipantContext = {
+  nickname: string
+  participantId: number
+  role: ParticipantRole
+  sessionId: string
 }
