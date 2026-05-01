@@ -16,6 +16,7 @@ type TranscriptLine = z.infer<typeof transcriptLineSchema>
 
 const TRANSCRIPT_DIRECTORY = join(process.cwd(), '.data', 'storage', 'transcripts')
 const MASTER_TRANSCRIPT_FILE = 'master.jsonl'
+const COMPILED_MASTER_TRANSCRIPT_FILE = 'compiled_master.txt'
 
 export function saveTranscript(participant: PeerParticipantContext, timestamp: number, transcript: string) {
   const normalizedTranscript = transcript.trim()
@@ -111,12 +112,37 @@ export function combineTranscripts(participant: PeerParticipantContext) {
     })
 }
 
-export function compileTranscript(participant: PeerParticipantContext) {
-  // Function for preparing the master transcript for LLM consumption
-  // Should format the jsonl file to a .txt file (maybe) and strip out all unnecessary metadata
-  // leaving only the speaker and what was spoken
-  // Final format tbd
-  const sessionDirectory = join(TRANSCRIPT_DIRECTORY, participant.sessionId)
+export async function compileTranscript(sessionId: string) {
+  const sessionDirectory = join(TRANSCRIPT_DIRECTORY, sessionId)
   const masterTranscriptPath = join(sessionDirectory, MASTER_TRANSCRIPT_FILE)
-  const _masterTranscript = readFile(masterTranscriptPath, { encoding: 'utf8' })
+
+  const compiledMasterTranscriptLines = await readFile(masterTranscriptPath, { encoding: 'utf8' }).then((contents) => {
+    const compiledLines: string[] = []
+
+    for (const content of contents) {
+      const rawLines = content
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+
+      for (const rawLine of rawLines) {
+        try {
+          const result = transcriptLineSchema.safeParse(JSON.parse(rawLine))
+          if (result.success) {
+            compiledLines.push(`${result.data.nickname}: ${result.data.transcript}`)
+          }
+        } catch (error: unknown) {
+          console.error('Malformed line in transcript', error)
+        }
+      }
+
+      return compiledLines
+    }
+  })
+
+  if (!compiledMasterTranscriptLines) {
+    throw new Error('Failed to compile master transcript')
+  }
+  const compiledMasterTranscriptPath = join(sessionDirectory, COMPILED_MASTER_TRANSCRIPT_FILE)
+  await writeFile(compiledMasterTranscriptPath, compiledMasterTranscriptLines.join('\n'), { encoding: 'utf8' })
 }
