@@ -10,6 +10,7 @@ export type CharacterEdge = {
   character1Id: number
   character2Id: number
   score: number
+  sessionId?: string | null
 }
 
 export type SimulationNode = CharacterNode & {

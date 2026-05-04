@@ -29,6 +29,7 @@ export const sessions = sqliteTable('sessions', {
     .notNull(),
   id: text('id').primaryKey(),
   status: text('status').default(SessionStatus.OPEN).notNull(),
+  wikiSlug: text('wiki_slug'),
 })
 
 export const sessionRelations = relations(sessions, ({ one }) => ({
@@ -113,4 +114,5 @@ export const characterRelationships = sqliteTable('character_relationships', {
     .references(() => characters.id)
     .notNull(),
   score: int('score').notNull().default(0),
+  sessionId: text('session_id').references(() => sessions.id),
 })

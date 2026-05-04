@@ -58,12 +58,14 @@ const {
         if (!isRecordingSupported.value) {
           return
         }
+        sessionStatusText.value = 'Recording'
         startRecording()
       })
       .with({ event: 'stopRecording' }, (_event) => {
         if (!isRecordingSupported.value) {
           return
         }
+        sessionStatusText.value = 'Stopped recording'
         stopRecording()
       })
   },
