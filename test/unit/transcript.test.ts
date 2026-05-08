@@ -85,6 +85,7 @@ describe('transcript utils', () => {
       transcript: 'welcome to critical role',
     },
   ]
+
   it('cleans sequential transcript lines', () => {
     const cleanLines = cleanTranscript(lines)
 

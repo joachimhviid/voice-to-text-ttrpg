@@ -49,8 +49,8 @@ export function saveTranscript(participant: PeerParticipantContext, timestamp: n
     })
 }
 
-export function combineTranscripts(participant: PeerParticipantContext) {
-  const sessionDirectory = join(TRANSCRIPT_DIRECTORY, participant.sessionId)
+export function combineTranscripts(sessionId: string) {
+  const sessionDirectory = join(TRANSCRIPT_DIRECTORY, sessionId)
 
   void readdir(sessionDirectory, { withFileTypes: true })
     .then((entries) => {
@@ -67,6 +67,7 @@ export function combineTranscripts(participant: PeerParticipantContext) {
           const mergedLines: TranscriptLine[] = []
 
           for (const content of contents) {
+            const parsedLines: TranscriptLine[] = []
             const rawLines = content
               .split(/\r?\n/)
               .map((line) => line.trim())
@@ -76,12 +77,13 @@ export function combineTranscripts(participant: PeerParticipantContext) {
               try {
                 const result = transcriptLineSchema.safeParse(JSON.parse(rawLine))
                 if (result.success) {
-                  mergedLines.push(result.data)
+                  parsedLines.push(result.data)
                 }
               } catch (error: unknown) {
                 console.error('Malformed line in transcript', error)
               }
             }
+            mergedLines.push(...cleanTranscript(parsedLines))
           }
 
           mergedLines.sort((a, b) => {
@@ -106,8 +108,7 @@ export function combineTranscripts(participant: PeerParticipantContext) {
     .catch((error: unknown) => {
       console.error('Failed to combine transcripts', {
         error,
-        participantId: participant.participantId,
-        sessionId: participant.sessionId,
+        sessionId,
       })
     })
 }
