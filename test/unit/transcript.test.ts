@@ -89,7 +89,7 @@ describe('transcript utils', () => {
     const cleanLines = cleanTranscript(lines)
 
     expect(cleanLines.length).toBe(2)
-    expect(cleanLines).toBe([
+    expect(cleanLines).toEqual([
       {
         nickname: 'Matt Mercer',
         participantId: 12,

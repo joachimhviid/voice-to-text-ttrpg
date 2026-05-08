@@ -1,8 +1,23 @@
 import { defineConfig } from 'vitest/config'
+import { defineVitestProject } from '@nuxt/test-utils/config'
 
 export default defineConfig({
-  resolve: {
-    // Reset aliases from workspace Vitest config because they've already been set by Nuxt
-    alias: {},
+  test: {
+    projects: [
+      await defineVitestProject({
+        test: {
+          environment: 'node',
+          include: ['test/unit/*.{test,spec}.ts'],
+          name: 'unit',
+        },
+      }),
+      await defineVitestProject({
+        test: {
+          environment: 'nuxt',
+          include: ['test/nuxt/*.{test,spec}.ts'],
+          name: 'nuxt',
+        },
+      }),
+    ],
   },
 })

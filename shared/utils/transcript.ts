@@ -2,7 +2,6 @@ import { appendFile, mkdir, readdir, readFile, writeFile } from 'node:fs/promise
 import { join } from 'node:path'
 import type { PeerParticipantContext } from '#shared/types/session'
 import { z } from 'zod'
-import { diff } from 'diff-match-patch-es'
 
 const transcriptLineSchema = z.object({
   nickname: z.string(),
@@ -149,15 +148,20 @@ export async function compileTranscript(sessionId: string) {
 }
 
 export function cleanTranscript(lines: TranscriptLine[]): TranscriptLine[] {
-  if (lines.length < 2) {
+  if (lines.length === 1) {
     console.info('Only 1 line. No cleaning necessary')
     return lines
   }
 
-  lines.reduce((prevLine, curLine, index) => {})
-  // for (let index = 1; index < lines.length; index++) {
-  //   const prevLine = lines[index]
-  //   const line = lines[index]
-  // }
-  return []
+  return lines.reduce((accumulator, current) => {
+    const prevLine = accumulator[accumulator.length - 1]
+
+    if (prevLine && current.transcript.startsWith(prevLine.transcript)) {
+      accumulator[accumulator.length - 1] = current
+    } else {
+      accumulator.push(current)
+    }
+
+    return accumulator
+  }, [] as TranscriptLine[])
 }
