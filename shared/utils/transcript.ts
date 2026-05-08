@@ -1,6 +1,6 @@
 import { appendFile, mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { PeerParticipantContext } from '../routes/ws/session'
+import type { PeerParticipantContext } from '#shared/types/session'
 import { z } from 'zod'
 
 const transcriptLineSchema = z.object({
@@ -12,7 +12,7 @@ const transcriptLineSchema = z.object({
   transcript: z.string(),
 })
 
-type TranscriptLine = z.infer<typeof transcriptLineSchema>
+export type TranscriptLine = z.infer<typeof transcriptLineSchema>
 
 const TRANSCRIPT_DIRECTORY = join(process.cwd(), '.data', 'storage', 'transcripts')
 const MASTER_TRANSCRIPT_FILE = 'master.jsonl'
@@ -49,8 +49,8 @@ export function saveTranscript(participant: PeerParticipantContext, timestamp: n
     })
 }
 
-export function combineTranscripts(participant: PeerParticipantContext) {
-  const sessionDirectory = join(TRANSCRIPT_DIRECTORY, participant.sessionId)
+export function combineTranscripts(sessionId: string) {
+  const sessionDirectory = join(TRANSCRIPT_DIRECTORY, sessionId)
 
   void readdir(sessionDirectory, { withFileTypes: true })
     .then((entries) => {
@@ -67,6 +67,7 @@ export function combineTranscripts(participant: PeerParticipantContext) {
           const mergedLines: TranscriptLine[] = []
 
           for (const content of contents) {
+            const parsedLines: TranscriptLine[] = []
             const rawLines = content
               .split(/\r?\n/)
               .map((line) => line.trim())
@@ -76,12 +77,13 @@ export function combineTranscripts(participant: PeerParticipantContext) {
               try {
                 const result = transcriptLineSchema.safeParse(JSON.parse(rawLine))
                 if (result.success) {
-                  mergedLines.push(result.data)
+                  parsedLines.push(result.data)
                 }
               } catch (error: unknown) {
                 console.error('Malformed line in transcript', error)
               }
             }
+            mergedLines.push(...cleanTranscript(parsedLines))
           }
 
           mergedLines.sort((a, b) => {
@@ -106,8 +108,7 @@ export function combineTranscripts(participant: PeerParticipantContext) {
     .catch((error: unknown) => {
       console.error('Failed to combine transcripts', {
         error,
-        participantId: participant.participantId,
-        sessionId: participant.sessionId,
+        sessionId,
       })
     })
 }
@@ -145,4 +146,23 @@ export async function compileTranscript(sessionId: string) {
   }
   const compiledMasterTranscriptPath = join(sessionDirectory, COMPILED_MASTER_TRANSCRIPT_FILE)
   await writeFile(compiledMasterTranscriptPath, compiledMasterTranscriptLines.join('\n'), { encoding: 'utf8' })
+}
+
+export function cleanTranscript(lines: TranscriptLine[]): TranscriptLine[] {
+  if (lines.length === 1) {
+    console.info('Only 1 line. No cleaning necessary')
+    return lines
+  }
+
+  return lines.reduce((accumulator, current) => {
+    const prevLine = accumulator[accumulator.length - 1]
+
+    if (prevLine && current.transcript.startsWith(prevLine.transcript)) {
+      accumulator[accumulator.length - 1] = current
+    } else {
+      accumulator.push(current)
+    }
+
+    return accumulator
+  }, [] as TranscriptLine[])
 }

@@ -1,19 +1,12 @@
 import { db } from '#server/db'
-import type { ParticipantRole } from '#server/db/schema'
 import { participants, sessions, SessionStatus } from '#server/db/schema'
+import type { PeerParticipantContext } from '#shared/types/session'
 import { sessionActionSchema } from '#shared/types/session'
 import { PARTICIPANT_SESSION_COOKIE, parseParticipantSessionCookie } from '#shared/utils/participantSessionCookie'
 import { and, eq } from 'drizzle-orm'
 import { match } from 'ts-pattern'
 import { parse } from 'cookie-es'
-import { combineTranscripts, saveTranscript } from '#server/utils/saveTranscript'
-
-export type PeerParticipantContext = {
-  nickname: string
-  participantId: number
-  role: ParticipantRole
-  sessionId: string
-}
+import { combineTranscripts, saveTranscript } from '#shared/utils/transcript'
 
 type SessionPeerContext = {
   participant?: PeerParticipantContext
@@ -106,7 +99,7 @@ export default defineWebSocketHandler({
           return
         }
 
-        combineTranscripts(participant)
+        combineTranscripts(participant.sessionId)
         db.update(sessions).set({ status: SessionStatus.CLOSED }).where(eq(sessions.id, participant.sessionId)).run()
 
         peer.peers.forEach((p) => p.close(1000))

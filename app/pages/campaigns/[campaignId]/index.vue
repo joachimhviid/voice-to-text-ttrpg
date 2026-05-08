@@ -23,7 +23,7 @@ const orderedSessions = computed(() => {
     </div>
     <div>
       <!-- List of sessions with summaries -->
-      <div v-for="session in orderedSessions" :key="session.id">{{ session.id }} {{ session.status }}</div>
+      <SessionCard v-for="session in orderedSessions" :key="session.id" :session="session" />
     </div>
   </div>
 </template>
