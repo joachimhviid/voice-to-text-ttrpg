@@ -1,6 +1,6 @@
 import { appendFile, mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { PeerParticipantContext } from '../routes/ws/session'
+import type { PeerParticipantContext } from '#shared/types/session'
 import { z } from 'zod'
 
 const transcriptLineSchema = z.object({
@@ -12,7 +12,7 @@ const transcriptLineSchema = z.object({
   transcript: z.string(),
 })
 
-type TranscriptLine = z.infer<typeof transcriptLineSchema>
+export type TranscriptLine = z.infer<typeof transcriptLineSchema>
 
 const TRANSCRIPT_DIRECTORY = join(process.cwd(), '.data', 'storage', 'transcripts')
 const MASTER_TRANSCRIPT_FILE = 'master.jsonl'
@@ -49,7 +49,22 @@ export function saveTranscript(participant: PeerParticipantContext, timestamp: n
     })
 }
 
-/** Merges all per-participant JSONL files into a sorted master.jsonl for the given session. */
+/** Called from the WebSocket handler — delegates to combineTranscriptsForSession. */
+export function combineTranscripts(participant: PeerParticipantContext): void {
+  void combineTranscriptsForSession(participant.sessionId).catch((error) => {
+    console.error('Failed to combine transcripts', {
+      error,
+      participantId: participant.participantId,
+      sessionId: participant.sessionId,
+    })
+  })
+}
+
+/**
+ * Reads all per-participant .jsonl files for a session, applies cleanTranscript
+ * to each to deduplicate rolling speech recognitions, merges and sorts by
+ * timestamp, then writes the result to master.jsonl.
+ */
 export async function combineTranscriptsForSession(sessionId: string): Promise<void> {
   const sessionDirectory = join(TRANSCRIPT_DIRECTORY, sessionId)
 
@@ -67,6 +82,7 @@ export async function combineTranscriptsForSession(sessionId: string): Promise<v
   const mergedLines: TranscriptLine[] = []
 
   for (const content of fileContents) {
+    const parsedLines: TranscriptLine[] = []
     const rawLines = content
       .split(/\r?\n/)
       .map((line) => line.trim())
@@ -75,11 +91,13 @@ export async function combineTranscriptsForSession(sessionId: string): Promise<v
     for (const rawLine of rawLines) {
       try {
         const result = transcriptLineSchema.safeParse(JSON.parse(rawLine))
-        if (result.success) mergedLines.push(result.data)
+        if (result.success) parsedLines.push(result.data)
       } catch (error: unknown) {
         console.error('Malformed line in transcript', error)
       }
     }
+
+    mergedLines.push(...cleanTranscript(parsedLines))
   }
 
   mergedLines.sort((a, b) => {
@@ -92,21 +110,9 @@ export async function combineTranscriptsForSession(sessionId: string): Promise<v
   await writeFile(masterTranscriptPath, serialized ? `${serialized}\n` : '', { encoding: 'utf8' })
 }
 
-/** Called from the WebSocket handler — delegates to combineTranscriptsForSession. */
-export function combineTranscripts(participant: PeerParticipantContext) {
-  void combineTranscriptsForSession(participant.sessionId).catch((error) => {
-    console.error('Failed to combine transcripts', {
-      error,
-      participantId: participant.participantId,
-      sessionId: participant.sessionId,
-    })
-  })
-}
-
 /**
  * Reads master.jsonl for a session and compiles it into "Nickname: transcript" lines.
- * Writes compiled_master.txt and returns the compiled content.
- * Bug fix: previously iterated over characters instead of lines.
+ * Writes compiled_master.txt and returns the compiled string.
  */
 export async function compileTranscript(sessionId: string): Promise<string> {
   const sessionDirectory = join(TRANSCRIPT_DIRECTORY, sessionId)
@@ -136,4 +142,23 @@ export async function compileTranscript(sessionId: string): Promise<string> {
   await writeFile(compiledMasterTranscriptPath, compiled, { encoding: 'utf8' })
 
   return compiled
+}
+
+export function cleanTranscript(lines: TranscriptLine[]): TranscriptLine[] {
+  if (lines.length === 1) {
+    console.info('Only 1 line. No cleaning necessary')
+    return lines
+  }
+
+  return lines.reduce((accumulator, current) => {
+    const prevLine = accumulator[accumulator.length - 1]
+
+    if (prevLine && current.transcript.startsWith(prevLine.transcript)) {
+      accumulator[accumulator.length - 1] = current
+    } else {
+      accumulator.push(current)
+    }
+
+    return accumulator
+  }, [] as TranscriptLine[])
 }

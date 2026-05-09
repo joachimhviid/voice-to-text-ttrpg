@@ -10,7 +10,14 @@ export default defineNuxtConfig({
       scan: true,
     },
   },
-  modules: ['@nuxt/content', '@nuxt/eslint', '@vueuse/nuxt', 'nuxt-typed-router', '@nuxt/icon'],
+  modules: [
+    '@nuxt/content',
+    '@nuxt/eslint',
+    '@vueuse/nuxt',
+    'nuxt-typed-router',
+    '@nuxt/icon',
+    '@nuxt/test-utils/module',
+  ],
   nitro: {
     experimental: {
       websocket: true,

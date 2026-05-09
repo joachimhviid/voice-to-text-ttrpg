@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { ParticipantRole } from '#server/db/schema'
 
 export const sessionActionSchema = z.discriminatedUnion('action', [
   z.object({
@@ -45,3 +46,20 @@ export const sessionEventSchema = z.discriminatedUnion('event', [
     event: z.literal('pauseRecording'),
   }),
 ])
+
+export type Session = {
+  combatStats?: string
+  content?: string
+  id: number
+  inventoryStats?: string
+  relations?: string
+  summary?: string
+  title: string
+}
+
+export type PeerParticipantContext = {
+  nickname: string
+  participantId: number
+  role: ParticipantRole
+  sessionId: string
+}

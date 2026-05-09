@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import ollama from 'ollama'
 import { db } from '#server/db'
 import { characters, characterRelationships, sessions } from '#server/db/schema'
-import { combineTranscriptsForSession, compileTranscript } from '#server/utils/saveTranscript'
+import { combineTranscriptsForSession, compileTranscript } from '#shared/utils/transcript'
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
