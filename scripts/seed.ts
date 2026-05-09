@@ -2,9 +2,9 @@
 /**
  * seed.ts
  *
- * Creates a test campaign + closed session in the DB and writes the
- * simple_transcript.txt as a master.jsonl so the "Generate Wiki" button
- * on the campaign page can be used to test the full flow.
+ * Creates a test campaign with two closed sessions in the DB and writes each
+ * transcript as a master.jsonl so the "Generate Wiki" button on the campaign
+ * page can be used to test the full flow with multiple sessions.
  *
  * Usage:
  *   npx tsx scripts/seed.ts
@@ -22,7 +22,6 @@ import * as schema from '../server/db/schema.ts'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PROJECT_ROOT = join(__dirname, '..')
-const TRANSCRIPT_FILE = join(__dirname, 'simple_transcript.txt')
 
 // ── DB connection ─────────────────────────────────────────────────────────────
 
@@ -57,46 +56,35 @@ function parseTranscript(content: string): TranscriptLine[] {
     })
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+// ── Session seeder ────────────────────────────────────────────────────────────
 
-async function main() {
-  const db = await getDb()
+type Db = Awaited<ReturnType<typeof getDb>>
 
-  // 1. Create campaign
-  const [campaign] = await db
-    .insert(schema.campaigns)
-    .values({ name: 'Test Campaign' })
-    .returning()
-
-  console.log(`Created campaign: "${campaign!.name}" (id=${campaign!.id})`)
-
-  // 2. Create session
+async function seedSession(db: Db, campaignId: number, transcriptFile: string, code: string) {
   const sessionId = createId()
   const [session] = await db
     .insert(schema.sessions)
     .values({
-      campaignId: campaign!.id,
-      code: 'TEST',
+      campaignId,
+      code,
       id: sessionId,
       status: schema.SessionStatus.CLOSED,
     })
     .returning()
 
-  console.log(`Created session: ${session!.id} (status=closed)`)
+  console.log(`  Created session: ${session!.id} (code=${code})`)
 
-  // 3. Parse transcript — collapse multi-speaker lines (e.g. "LUIS and BRENNAN") to the first name
-  const transcriptContent = await readFile(TRANSCRIPT_FILE, 'utf-8')
+  const transcriptContent = await readFile(transcriptFile, 'utf-8')
   const rawLines = parseTranscript(transcriptContent)
+  // Collapse multi-speaker lines like "LUIS and BRENNAN" to the first name
   const lines = rawLines.map((line) => ({
     ...line,
     speaker: line.speaker.split(/\s+and\s+/i)[0]!.trim(),
   }))
 
-  // Unique speakers after normalisation
   const uniqueSpeakers = [...new Set(lines.map((l) => l.speaker))]
-  console.log(`Speakers found: ${uniqueSpeakers.join(', ')}`)
+  console.log(`  Speakers: ${uniqueSpeakers.join(', ')}`)
 
-  // 4. Create participant records — let the DB assign IDs via autoIncrement
   const speakerToId = new Map<string, number>()
   let isFirst = true
   for (const name of uniqueSpeakers) {
@@ -112,10 +100,7 @@ async function main() {
     isFirst = false
   }
 
-  console.log(`Created ${speakerToId.size} participant(s)`)
-
-  // 5. Write master.jsonl — the format saveTranscript.ts produces
-  const baseTime = Date.now() - lines.length * 5000 // space lines 5s apart
+  const baseTime = Date.now() - lines.length * 5000
   const jsonlLines = lines.map((line, i) => {
     const participantId = speakerToId.get(line.speaker)!
     const spokenAtUnixMs = baseTime + i * 5000
@@ -133,10 +118,34 @@ async function main() {
   await mkdir(transcriptDir, { recursive: true })
   await writeFile(join(transcriptDir, 'master.jsonl'), jsonlLines.join('\n') + '\n', 'utf-8')
 
-  console.log(`Wrote ${jsonlLines.length} lines to master.jsonl`)
-  console.log(`\nDone! Open the app and navigate to the campaign to test:`)
-  console.log(`  Campaign: /campaigns/${campaign!.id}`)
-  console.log(`  Click "Generate Wiki" on the closed session to test the full flow.`)
+  console.log(`  Wrote ${jsonlLines.length} lines to master.jsonl`)
+  return session!
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+
+async function main() {
+  const db = await getDb()
+
+  // 1. Create campaign
+  const [campaign] = await db
+    .insert(schema.campaigns)
+    .values({ name: 'Test Campaign' })
+    .returning()
+
+  console.log(`Created campaign: "${campaign!.name}" (id=${campaign!.id})`)
+
+  // 2. Seed session 1 — funeral transcript
+  console.log('\nSeeding session 1 (The Funeral of Thjazi Fang)...')
+  await seedSession(db, campaign!.id, join(__dirname, 'simple_transcript.txt'), 'TST1')
+
+  // 3. Seed session 2 — dungeon heist transcript
+  console.log('\nSeeding session 2 (The Vault of Thessan)...')
+  await seedSession(db, campaign!.id, join(__dirname, 'dungeon_transcript.txt'), 'TST2')
+
+  console.log(`\nDone! Open the app and navigate to the campaign:`)
+  console.log(`  /campaigns/${campaign!.id}`)
+  console.log(`  Click "Generate Wiki" on each closed session to test the full flow.`)
 }
 
 main().catch((e) => {

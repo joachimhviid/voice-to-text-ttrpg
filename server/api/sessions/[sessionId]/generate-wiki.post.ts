@@ -17,9 +17,9 @@ const SYSTEM_PROMPT = `You are the Lead Scribe of Araman. Your task is to transf
 Rules:
 - OOC Filter: Ignore table talk (meta-jokes, food orders, technical issues). Focus only on in-game narrative and mechanics.
 - Consistency: Ensure relation scores are derived directly from events in the transcript.
-- Content should be detailed prose written like a historical chronicle. Use ### subheadings to divide the chronicle into named sections — do not use bold text (**) as section headers.
+- Content should be detailed prose written like a historical chronicle. Use ### subheadings to divide the chronicle into named sections — do not use bold text (**) as section headers. The content field must contain ONLY narrative prose — never include JSON, relation data, scores, or any structured data inside it.
 - Summary should be 3–6 concise bullet points covering the major events.
-- Relations must list every meaningful character pair with a score from -100 (enemies) to 100 (close allies) and a brief reasoning.
+- Relations must list every meaningful character pair with a score from -100 (enemies) to 100 (close allies) and a brief reasoning. Relations belong ONLY in the relations array, never in the content field.
 
 The transcript is formatted as Speaker: transcript`
 
@@ -66,6 +66,32 @@ const wikiSchema = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+/**
+ * Strips any trailing lines that look like JSON leakage from the model
+ * (e.g. `* "relations": [{`, `* "score"`, bare `{`, `[`, `}` lines).
+ * These appear when smaller models bleed the structured-output schema
+ * into the free-text content field.
+ */
+function sanitiseContent(content: string): string {
+  const lines = content.split('\n')
+  // Walk backwards, dropping lines that look like JSON fragments
+  let cutAt = lines.length
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const trimmed = lines[i]!.trim()
+    const looksLikeJson =
+      /^[*-]?\s*["{[{}\][]/.test(trimmed) ||      // starts with JSON chars (possibly after * or -)
+      /^[*-]?\s*"\w+":\s/.test(trimmed) ||         // "key": value pattern
+      /^[*-]?\s*(relations|score|context|characterA|characterB|reasoning_tag)\b/.test(trimmed) ||
+      trimmed === '' && i === lines.length - 1      // trailing blank line at end
+    if (looksLikeJson) {
+      cutAt = i
+    } else {
+      break
+    }
+  }
+  return lines.slice(0, cutAt).join('\n').trimEnd()
+}
+
 function buildSlug(title: string): string {
   return title
     .toLowerCase()
@@ -83,6 +109,7 @@ async function findOrCreateCharacter(name: string): Promise<number> {
 function buildMarkdown(entry: WikiEntry, sessionId: string): string {
   const date = new Date().toISOString().split('T')[0]
   const summaryLines = entry.summary.map((s) => `- ${s}`).join('\n')
+  const content = sanitiseContent(entry.content)
 
   return `---
 title: "${entry.title}"
@@ -92,7 +119,7 @@ sessionId: "${sessionId}"
 
 ## Chronicle
 
-${entry.content}
+${content}
 
 ## Summary
 

@@ -10,15 +10,60 @@ const orderedSessions = computed(() => {
 })
 
 async function onWikiGenerated(slug: string) {
-  // Refresh campaign data so the card immediately shows the View Wiki link
   await refresh()
   await navigateTo(`/wiki/${slug}`)
+}
+
+const deleteState = ref<'idle' | 'confirm' | 'deleting'>('idle')
+
+async function deleteCampaign() {
+  deleteState.value = 'deleting'
+  try {
+    await $fetch(`/api/campaigns/${params.campaignId}`, { method: 'DELETE' })
+    await navigateTo('/campaigns')
+  } catch {
+    deleteState.value = 'idle'
+  }
 }
 </script>
 
 <template>
   <div class="mx-auto max-w-5xl p-4">
-    <h1 class="mb-2 text-4xl font-bold">{{ campaign?.name }}</h1>
+    <div class="mb-2 flex items-start justify-between gap-4">
+      <h1 class="text-4xl font-bold">{{ campaign?.name }}</h1>
+
+      <div class="shrink-0">
+        <template v-if="deleteState === 'idle'">
+          <button
+            class="rounded bg-red-900/40 px-3 py-1.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-800/60 hover:text-red-300"
+            @click="deleteState = 'confirm'"
+          >
+            Delete campaign
+          </button>
+        </template>
+        <template v-else-if="deleteState === 'confirm'">
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-400">Delete all sessions and wiki entries?</span>
+            <button
+              class="rounded bg-red-700 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-600"
+              @click="deleteCampaign"
+            >
+              Confirm
+            </button>
+            <button
+              class="rounded bg-gray-700 px-3 py-1.5 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-600"
+              @click="deleteState = 'idle'"
+            >
+              Cancel
+            </button>
+          </div>
+        </template>
+        <template v-else>
+          <span class="text-sm text-gray-400">Deleting…</span>
+        </template>
+      </div>
+    </div>
+
     <p class="mb-6 text-gray-400">Description of campaign.</p>
 
     <div class="mb-8 flex gap-2">
