@@ -1,21 +1,21 @@
 export type CharacterNode = {
   id: number
-  name: string
   imageUrl: string
+  name: string
   wikiId?: number
 }
 
 export type CharacterEdge = {
-  id: number
   character1Id: number
   character2Id: number
+  id: number
   score: number
-  sessionId?: string | null
+  sessionId?: null | string
 }
 
 export type SimulationNode = CharacterNode & {
-  x: number
-  y: number
   vx: number
   vy: number
+  x: number
+  y: number
 }

@@ -9,10 +9,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'sessionId is required' })
   }
 
-  const edges = await db
-    .select()
-    .from(characterRelationships)
-    .where(eq(characterRelationships.sessionId, sessionId))
+  const edges = await db.select().from(characterRelationships).where(eq(characterRelationships.sessionId, sessionId))
 
   if (edges.length === 0) {
     return { edges: [], nodes: [] }

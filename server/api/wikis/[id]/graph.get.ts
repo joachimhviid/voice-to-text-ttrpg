@@ -16,11 +16,11 @@ export default defineEventHandler(async (event) => {
   const nodes = await db.select().from(characters).where(eq(characters.wikiId, wikiId))
 
   if (nodes.length === 0) {
-    return { nodes: [], edges: [] }
+    return { edges: [], nodes: [] }
   }
 
   // 2. Find all relationships where BOTH characters are in the list of nodes we just found
-  const characterIds = nodes.map(n => n.id)
+  const characterIds = nodes.map((n) => n.id)
   const edges = await db
     .select()
     .from(characterRelationships)
@@ -31,5 +31,5 @@ export default defineEventHandler(async (event) => {
       ),
     )
 
-  return { nodes, edges }
+  return { edges, nodes }
 })

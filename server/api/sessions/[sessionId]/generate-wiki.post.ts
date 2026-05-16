@@ -42,26 +42,26 @@ interface WikiEntry {
 // ── JSON Schema for Ollama structured output ──────────────────────────────────
 
 const wikiSchema = {
-  type: 'object',
   properties: {
-    title: { type: 'string' },
     content: { type: 'string' },
-    summary: { type: 'array', items: { type: 'string' } },
     relations: {
-      type: 'array',
       items: {
-        type: 'object',
         properties: {
           characterA: { type: 'string' },
           characterB: { type: 'string' },
-          rating: { type: 'integer', minimum: -100, maximum: 100 },
           context: { type: 'string' },
+          rating: { maximum: 100, minimum: -100, type: 'integer' },
         },
         required: ['characterA', 'characterB', 'rating', 'context'],
+        type: 'object',
       },
+      type: 'array',
     },
+    summary: { items: { type: 'string' }, type: 'array' },
+    title: { type: 'string' },
   },
   required: ['title', 'content', 'summary', 'relations'],
+  type: 'object',
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -79,10 +79,10 @@ function sanitiseContent(content: string): string {
   for (let i = lines.length - 1; i >= 0; i--) {
     const trimmed = lines[i]!.trim()
     const looksLikeJson =
-      /^[*-]?\s*["{[{}\][]/.test(trimmed) ||      // starts with JSON chars (possibly after * or -)
-      /^[*-]?\s*"\w+":\s/.test(trimmed) ||         // "key": value pattern
+      /^[*-]?\s*["{[{}\][]/.test(trimmed) || // starts with JSON chars (possibly after * or -)
+      /^[*-]?\s*"\w+":\s/.test(trimmed) || // "key": value pattern
       /^[*-]?\s*(relations|score|context|characterA|characterB|reasoning_tag)\b/.test(trimmed) ||
-      trimmed === '' && i === lines.length - 1      // trailing blank line at end
+      (trimmed === '' && i === lines.length - 1) // trailing blank line at end
     if (looksLikeJson) {
       cutAt = i
     } else {
@@ -153,7 +153,10 @@ export default defineEventHandler(async (event) => {
   try {
     transcript = await compileTranscript(sessionId)
   } catch {
-    throw createError({ statusCode: 422, statusMessage: 'Could not compile transcript — has the session recorded any speech?' })
+    throw createError({
+      statusCode: 422,
+      statusMessage: 'Could not compile transcript — has the session recorded any speech?',
+    })
   }
 
   if (!transcript.trim()) {
@@ -164,19 +167,22 @@ export default defineEventHandler(async (event) => {
   let entry: WikiEntry
   try {
     const response = await ollama.chat({
-      model: MODEL,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: `Here is the session transcript:\n\n${transcript}` },
-      ],
       format: wikiSchema,
+      messages: [
+        { content: SYSTEM_PROMPT, role: 'system' },
+        { content: `Here is the session transcript:\n\n${transcript}`, role: 'user' },
+      ],
+      model: MODEL,
       options: { num_ctx: NUM_CTX },
     })
     entry = JSON.parse(response.message.content) as WikiEntry
   } catch (e: unknown) {
     const err = e instanceof Error ? e : new Error(String(e))
     if (err.message.includes('fetch failed') || err.message.includes('ECONNREFUSED')) {
-      throw createError({ statusCode: 503, statusMessage: 'Could not reach Ollama — make sure it is running (ollama serve)' })
+      throw createError({
+        statusCode: 503,
+        statusMessage: 'Could not reach Ollama — make sure it is running (ollama serve)',
+      })
     }
     throw createError({ statusCode: 500, statusMessage: `Ollama error: ${err.message}` })
   }

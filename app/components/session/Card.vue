@@ -1,27 +1,24 @@
 <script setup lang="ts">
 import { format } from 'date-fns'
+import type { InternalApi } from 'nitropack'
 
+type SessionData = NonNullable<InternalApi['/api/campaigns/:campaignId']['default']>['sessions'][number]
 const props = defineProps<{
-  session: {
-    id: string
-    status: string
-    createdAt: string
-    wikiSlug?: string | null
-  }
+  session: SessionData
 }>()
 
 const emit = defineEmits<{
   wikiGenerated: [slug: string]
 }>()
 
-type GenerateState = 'idle' | 'generating' | 'error'
+type GenerateState = 'error' | 'generating' | 'idle'
 const generateState = ref<GenerateState>('idle')
 const errorMessage = ref('')
 
 const statusLabel: Record<string, string> = {
-  open: 'Open',
-  inProgress: 'In Progress',
   closed: 'Closed',
+  inProgress: 'In Progress',
+  open: 'Open',
 }
 
 const statusColour: Record<string, string> = {
@@ -46,29 +43,41 @@ const formattedDate = computed(() => {
   }
 })
 
-const canGenerateWiki = computed(
-  () => props.session.status === 'closed' && !props.session.wikiSlug && generateState.value !== 'generating',
+const { data, error, execute, pending, status } = useFetch(
+  `/api/sessions/${props.session.id}/generate-wiki` as `/api/sessions/:sessionId/generate-wiki`,
+  {
+    immediate: false,
+    method: 'POST',
+  },
 )
 
-async function generateWiki() {
-  generateState.value = 'generating'
-  errorMessage.value = ''
+const canGenerateWiki = computed(() => props.session.status === 'closed' && !props.session.wikiSlug && !pending.value)
 
-  try {
-    const result = await $fetch<{ slug: string }>(`/api/sessions/${props.session.id}/generate-wiki`, {
-      method: 'POST',
-    })
-    generateState.value = 'idle'
-    emit('wikiGenerated', result.slug)
-  } catch (e: unknown) {
-    generateState.value = 'error'
-    errorMessage.value = e instanceof Error ? e.message : 'Wiki generation failed — is Ollama running?'
-  }
+const generateWiki = async () => {
+  await execute()
+  // generateState.value = 'generating'
+  // errorMessage.value = ''
+  // try {
+  //   const result = await $fetch<{ slug: string }>(`/api/sessions/${props.session.id}/generate-wiki`, {
+  //     method: 'POST',
+  //   })
+  //   generateState.value = 'idle'
+  //   emit('wikiGenerated', result.slug)
+  // } catch (e: unknown) {
+  //   generateState.value = 'error'
+  //   errorMessage.value = e instanceof Error ? e.message : 'Wiki generation failed — is Ollama running?'
+  // }
 }
+
+watch(data, (value) => {
+  if (status.value === 'success' && value) {
+    emit('wikiGenerated', value.slug)
+  }
+})
 </script>
 
 <template>
-  <div class="rounded-lg border border-gray-700 bg-gray-800 p-4">
+  <div class="rounded-lg border border-white/20 p-4">
     <div class="flex items-start justify-between gap-4">
       <div class="min-w-0">
         <p class="text-sm text-gray-400">{{ formattedDate }}</p>
@@ -79,6 +88,12 @@ async function generateWiki() {
         :class="statusColour[session.status] ?? 'bg-gray-700 text-gray-300'"
       >
         {{ statusLabel[session.status] ?? session.status }}
+      </span>
+      <span
+        class="shrink-0 rounded border px-2 py-0.5 text-xs font-medium"
+        :class="statusColour[session.status] ?? 'bg-gray-700 text-gray-300'"
+      >
+        {{ status }}
       </span>
     </div>
 
@@ -91,21 +106,15 @@ async function generateWiki() {
         View wiki — {{ wikiTitle }}
       </NuxtLink>
 
-      <button
-        v-if="canGenerateWiki"
-        class="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-        @click="generateWiki"
-      >
-        Generate Wiki
-      </button>
+      <UiButton v-if="canGenerateWiki" variant="primary" size="sm" @click="generateWiki">Generate Wiki</UiButton>
 
-      <div v-if="generateState === 'generating'" class="flex items-center gap-2 text-sm text-gray-400">
+      <div v-if="pending" class="flex items-center gap-2 text-sm text-gray-400">
         <span class="inline-block h-3 w-3 animate-spin rounded-full border-2 border-gray-500 border-t-white" />
         Generating — this may take a minute...
       </div>
 
-      <p v-if="generateState === 'error'" class="text-sm text-red-400">
-        {{ errorMessage }}
+      <p v-if="error" class="text-sm text-red-400">
+        {{ error || 'Wiki generation failed — is Ollama running?' }}
       </p>
     </div>
   </div>
