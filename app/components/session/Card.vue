@@ -64,6 +64,7 @@ watch(data, (value) => {
   <div class="rounded-lg border border-white/20 p-4">
     <div class="flex items-start justify-between gap-4">
       <div class="min-w-0">
+        <p v-if="wikiTitle && wikiTitle !== ''" class="font-medium">{{ wikiTitle }}</p>
         <p class="text-sm text-gray-400">{{ formattedDate }}</p>
         <p class="mt-1 truncate font-mono text-xs text-gray-500">{{ session.id }}</p>
       </div>
@@ -73,21 +74,15 @@ watch(data, (value) => {
       >
         {{ statusLabel[session.status] ?? session.status }}
       </span>
-      <span
-        class="shrink-0 rounded border px-2 py-0.5 text-xs font-medium"
-        :class="statusColour[session.status] ?? 'bg-gray-700 text-gray-300'"
-      >
-        {{ status }}
-      </span>
     </div>
 
     <div class="mt-4 flex flex-wrap items-center gap-2">
       <NuxtLink
         v-if="session.wikiSlug"
-        :to="`/wiki/${session.wikiSlug}`"
+        :to="`/campaigns/${session.campaignId}/wiki/${session.wikiSlug}`"
         class="rounded bg-purple-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-purple-700"
       >
-        View wiki — {{ wikiTitle }}
+        View wiki
       </NuxtLink>
 
       <UiButton v-if="canGenerateWiki" variant="primary" size="sm" @click="generateWiki">Generate Wiki</UiButton>

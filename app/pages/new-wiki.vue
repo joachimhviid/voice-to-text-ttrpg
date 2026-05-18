@@ -28,7 +28,7 @@ async function createWiki() {
   })
 
   if (data.value?.id) {
-    await router.push(`/wiki/${data.value.id}`)
+    await router.push(`/campaigns/0/wiki/${data.value.id}`)
   }
 }
 

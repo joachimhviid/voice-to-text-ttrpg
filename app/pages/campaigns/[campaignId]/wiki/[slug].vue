@@ -2,7 +2,7 @@
 import type { CharacterEdge, CharacterNode } from '#shared/types/graph'
 import type { TocLink } from '@nuxt/content'
 
-const { params } = useRoute('wiki-slug')
+const { params } = useRoute('campaigns-campaignId-wiki-slug')
 
 const { data: wiki } = await useAsyncData(`wiki-${params.slug}`, async () => {
   const page = await queryCollection('wiki').where('stem', '=', `wiki/${params.slug}`).first()
