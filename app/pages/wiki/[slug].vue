@@ -1,78 +1,71 @@
 <script setup lang="ts">
 import type { CharacterEdge, CharacterNode } from '#shared/types/graph'
+import type { TocLink } from '@nuxt/content'
 
 const { params } = useRoute('wiki-slug')
-const slug = params.slug as string
 
-// Fetch the wiki entry from Nuxt Content
-const { data: wikiPage } = await useAsyncData(`wiki-${slug}`, () =>
-  queryCollection('wiki').where('stem', '=', `wiki/${slug}`).first(),
-)
+const { data: wiki } = await useAsyncData(`wiki-${params.slug}`, async () => {
+  const page = await queryCollection('wiki').where('stem', '=', `wiki/${params.slug}`).first()
+  if (!page) {
+    throw createError('Wiki page not found')
+  }
+  const graph = await $fetch<{ edges: CharacterEdge[]; nodes: CharacterNode[] }>(
+    `/api/sessions/${page.sessionId}/graph`,
+  )
+
+  return {
+    graph,
+    page,
+  }
+})
+
+if (!wiki.value) {
+  throw createError('Wiki not found')
+}
+
+useSeoMeta(wiki.value.page.seo)
 
 // ── TOC ───────────────────────────────────────────────────────────────────────
-
-interface TocLink {
-  id: string
-  text: string
-  depth: number
-}
 
 // Use the pre-built toc.links from Nuxt Content (headings only),
 // flatten one level of children, then append the in-template Relations Graph.
 const tocLinks = computed<TocLink[]>(() => {
-  const links = wikiPage.value?.body?.toc?.links ?? []
-  const flat: TocLink[] = []
-  for (const link of links) {
-    flat.push({ depth: link.depth, id: link.id, text: link.text })
-    for (const child of link.children ?? []) {
-      flat.push({ depth: child.depth, id: child.id, text: child.text })
-    }
-  }
-  flat.push({ depth: 2, id: 'character-graph', text: 'Relations Graph' })
-  return flat
+  const links = wiki.value?.page.body?.toc?.links ?? []
+
+  return links
+    .flatMap((link) => (link.children ? [link, ...link.children] : link))
+    .concat([{ depth: 2, id: 'character-graph', text: 'Relations Graph' }])
 })
 
 // ── Delete ────────────────────────────────────────────────────────────────────
+const { cancel, confirm, isRevealed, onConfirm, reveal } = useConfirmDialog()
 
-const sessionId = wikiPage.value?.sessionId
-const deleteState = ref<'confirm' | 'deleting' | 'idle'>('idle')
+const { execute: deleteWiki, status: deleteStatus } = useFetch(`/api/sessions/${wiki.value.page.sessionId}/wiki`, {
+  immediate: false,
+  method: 'DELETE',
+  onResponse: () => {
+    navigateTo('/')
+  },
+  watch: false,
+})
 
-async function deleteWiki() {
-  if (!sessionId) return
-  deleteState.value = 'deleting'
-  try {
-    await $fetch(`/api/sessions/${sessionId}/wiki`, { method: 'DELETE' })
-    await navigateTo('/')
-  } catch {
-    deleteState.value = 'idle'
-  }
-}
-
-// ── Graph ─────────────────────────────────────────────────────────────────────
-const { data: graphData } = await useAsyncData(`wiki-graph-${slug}`, () =>
-  sessionId
-    ? $fetch<{ edges: CharacterEdge[]; nodes: CharacterNode[] }>(`/api/sessions/${sessionId}/graph`)
-    : Promise.resolve(null),
-)
+onConfirm(() => deleteWiki())
 </script>
 
 <template>
-  <div v-if="wikiPage" class="flex justify-center p-4 text-white">
-    <div class="mx-auto grid w-full max-w-340 grid-cols-1 gap-6 md:grid-cols-[20rem_minmax(0,1fr)_20rem]">
-      <!-- Left spacer -->
-      <div class="hidden md:block" />
-
+  <div v-if="wiki" class="mx-auto max-w-5xl p-4 text-white">
+    <div class="grid w-full grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_20rem]">
       <!-- Main content -->
       <div class="order-2 min-w-0 md:order-0">
-        <h1 class="mb-4 text-4xl font-bold">{{ wikiPage.title }}</h1>
-        <p class="text-sm text-gray-400">{{ wikiPage.date }}</p>
+        <h1 class="mb-4 text-4xl font-bold">{{ wiki.page.title }}</h1>
+        <p class="text-sm text-gray-400">{{ wiki.page.date }}</p>
 
         <div class="prose prose-invert mb-8 wrap-break-word">
-          <ContentRenderer :value="wikiPage" />
+          <ContentRenderer :value="wiki.page" />
         </div>
 
         <h2 id="character-graph" class="mt-8 mb-2 text-2xl font-semibold">Relations Graph</h2>
-        <CharacterGraph v-if="graphData" :nodes="graphData.nodes" :edges="graphData.edges" />
+        <CharacterGraph v-if="wiki.graph" :nodes="wiki.graph.nodes" :edges="wiki.graph.edges" />
         <p v-else class="text-sm text-gray-400 italic">No relation data for this session.</p>
       </div>
 
@@ -80,48 +73,29 @@ const { data: graphData } = await useAsyncData(`wiki-graph-${slug}`, () =>
       <div class="order-1 w-full min-w-0 space-y-6 md:order-0 md:w-auto">
         <div class="overflow-hidden rounded-lg border border-gray-600 bg-gray-800">
           <div class="border-b border-gray-600 bg-gray-700 p-3 text-center text-xl font-bold">
-            {{ wikiPage.title }}
+            {{ wiki.page.title }}
           </div>
           <div class="space-y-2 p-4 text-sm">
             <div class="flex flex-col">
               <span class="font-semibold text-gray-400">Date</span>
-              <span class="text-gray-200">{{ wikiPage.date }}</span>
-            </div>
-            <div v-if="wikiPage.source" class="flex flex-col">
-              <span class="font-semibold text-gray-400">Source transcript</span>
-              <span class="break-all text-gray-200">{{ wikiPage.source }}</span>
+              <span class="text-gray-200">{{ wiki.page.date }}</span>
             </div>
           </div>
 
-          <div v-if="sessionId" class="border-t border-gray-600 p-3">
-            <template v-if="deleteState === 'idle'">
-              <button
-                class="w-full rounded bg-red-900/40 px-3 py-1.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-800/60 hover:text-red-300"
-                @click="deleteState = 'confirm'"
-              >
-                Delete wiki entry
-              </button>
+          <div v-if="wiki.page.sessionId" class="border-t border-gray-600 p-3">
+            <template v-if="deleteStatus === 'idle' && !isRevealed">
+              <UiButton variant="destroy" size="sm" @click="reveal">Delete wiki entry</UiButton>
             </template>
-            <template v-else-if="deleteState === 'confirm'">
+            <template v-if="isRevealed">
               <p class="mb-2 text-xs text-gray-400">
                 This will delete the wiki entry and all relation data for this session.
               </p>
               <div class="flex gap-2">
-                <button
-                  class="flex-1 rounded bg-red-700 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-600"
-                  @click="deleteWiki"
-                >
-                  Confirm
-                </button>
-                <button
-                  class="flex-1 rounded bg-gray-700 px-3 py-1.5 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-600"
-                  @click="deleteState = 'idle'"
-                >
-                  Cancel
-                </button>
+                <UiButton variant="destroy" size="sm" @click="confirm">Confirm</UiButton>
+                <UiButton variant="tertiary" size="sm" @click="cancel">Cancel</UiButton>
               </div>
             </template>
-            <template v-else>
+            <template v-if="deleteStatus === 'pending'">
               <p class="text-center text-sm text-gray-400">Deleting…</p>
             </template>
           </div>
@@ -154,7 +128,7 @@ const { data: graphData } = await useAsyncData(`wiki-graph-${slug}`, () =>
   <div v-else class="p-8 text-center text-white">
     <p class="mb-2 text-2xl font-bold">Wiki entry not found</p>
     <p class="text-gray-400">
-      No wiki page exists for <code class="text-gray-300">{{ slug }}</code>
+      No wiki page exists for <code class="text-gray-300">{{ params.slug }}</code>
     </p>
   </div>
 </template>

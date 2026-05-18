@@ -10,9 +10,7 @@ export default defineContentConfig({
     wiki: defineCollection({
       schema: z.object({
         date: z.coerce.string(),
-        sessionId: z.string().optional(),
-        source: z.string().optional(),
-        title: z.string(),
+        sessionId: z.string(),
       }),
       source: 'wiki/**/*.md',
       type: 'page',

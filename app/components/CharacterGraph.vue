@@ -187,7 +187,7 @@ const handleNodeClick = (node: CharacterNode) => {
 
     <div
       ref="containerRef"
-      class="relative h-[400px] w-full overflow-hidden rounded-md border border-gray-600 bg-gray-800"
+      class="relative h-100 w-full overflow-hidden rounded-md border border-gray-600 bg-gray-800"
       :class="{ 'opacity-50': props.nodes.length === 0 }"
     >
       <!-- Draw Edges (Lines) -->

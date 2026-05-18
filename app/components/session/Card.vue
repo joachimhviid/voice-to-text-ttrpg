@@ -11,10 +11,6 @@ const emit = defineEmits<{
   wikiGenerated: [slug: string]
 }>()
 
-type GenerateState = 'error' | 'generating' | 'idle'
-const generateState = ref<GenerateState>('idle')
-const errorMessage = ref('')
-
 const statusLabel: Record<string, string> = {
   closed: 'Closed',
   inProgress: 'In Progress',
@@ -43,31 +39,19 @@ const formattedDate = computed(() => {
   }
 })
 
-const { data, error, execute, pending, status } = useFetch(
-  `/api/sessions/${props.session.id}/generate-wiki` as `/api/sessions/:sessionId/generate-wiki`,
-  {
-    immediate: false,
-    method: 'POST',
-  },
-)
+const {
+  data,
+  error,
+  execute: generateWiki,
+  pending,
+  status,
+} = useFetch(`/api/sessions/${props.session.id}/generate-wiki` as `/api/sessions/:sessionId/generate-wiki`, {
+  immediate: false,
+  method: 'POST',
+  watch: false,
+})
 
 const canGenerateWiki = computed(() => props.session.status === 'closed' && !props.session.wikiSlug && !pending.value)
-
-const generateWiki = async () => {
-  await execute()
-  // generateState.value = 'generating'
-  // errorMessage.value = ''
-  // try {
-  //   const result = await $fetch<{ slug: string }>(`/api/sessions/${props.session.id}/generate-wiki`, {
-  //     method: 'POST',
-  //   })
-  //   generateState.value = 'idle'
-  //   emit('wikiGenerated', result.slug)
-  // } catch (e: unknown) {
-  //   generateState.value = 'error'
-  //   errorMessage.value = e instanceof Error ? e.message : 'Wiki generation failed — is Ollama running?'
-  // }
-}
 
 watch(data, (value) => {
   if (status.value === 'success' && value) {
