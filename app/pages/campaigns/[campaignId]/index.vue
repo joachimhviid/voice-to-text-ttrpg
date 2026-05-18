@@ -6,6 +6,10 @@ const { data: campaign, refresh } = await useFetch(
   `/api/campaigns/${params.campaignId}` as '/api/campaigns/:campaignId',
 )
 
+useSeoMeta({
+  title: campaign.value?.name,
+})
+
 const orderedSessions = computed(() => {
   if (!campaign.value) return []
   return campaign.value.sessions.toSorted((a, b) => compareDesc(a.createdAt, b.createdAt))
