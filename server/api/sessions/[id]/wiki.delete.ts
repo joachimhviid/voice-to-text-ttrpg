@@ -7,9 +7,12 @@ import { characterRelationships, sessions } from '#server/db/schema'
 const WIKI_DIR = join(process.cwd(), 'content', 'wiki')
 
 export default defineEventHandler(async (event) => {
-  const sessionId = getRouterParam(event, 'sessionId')
+  const sessionId = getRouterParam(event, 'id')
   if (!sessionId) {
-    throw createError({ statusCode: 400, statusMessage: 'sessionId is required' })
+    throw createError({
+      status: 400,
+      statusText: 'No session id provided',
+    })
   }
 
   const [session] = await db.select().from(sessions).where(eq(sessions.id, sessionId))

@@ -3,7 +3,7 @@ import { characters } from '#server/db/schema'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { name, imageUrl, wikiId } = body
+  const { imageUrl, name, wikiId } = body
 
   if (!name) {
     throw createError({
@@ -15,8 +15,8 @@ export default defineEventHandler(async (event) => {
   const [newCharacter] = await db
     .insert(characters)
     .values({
-      name,
       imageUrl: imageUrl || undefined,
+      name,
       wikiId: wikiId || undefined,
     })
     .returning()

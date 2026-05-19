@@ -2,29 +2,36 @@
 import { compareDesc } from 'date-fns'
 
 const { params } = useRoute('campaigns-campaignId')
-const { data: campaign, refresh } = await useFetch(`/api/campaigns/${params.campaignId}` as '/api/campaigns/:campaignId')
+const { data: campaign, refresh } = await useFetch(
+  `/api/campaigns/${params.campaignId}` as '/api/campaigns/:campaignId',
+)
+
+useSeoMeta({
+  title: campaign.value?.name,
+})
 
 const orderedSessions = computed(() => {
   if (!campaign.value) return []
   return campaign.value.sessions.toSorted((a, b) => compareDesc(a.createdAt, b.createdAt))
 })
 
-async function onWikiGenerated(slug: string) {
+const onWikiGenerated = async (slug: string) => {
   await refresh()
-  await navigateTo(`/wiki/${slug}`)
+  await navigateTo(`/campaigns/${params.campaignId}/wiki/${slug}`)
 }
 
-const deleteState = ref<'idle' | 'confirm' | 'deleting'>('idle')
+const { cancel, confirm, isRevealed, onConfirm, reveal } = useConfirmDialog()
 
-async function deleteCampaign() {
-  deleteState.value = 'deleting'
-  try {
-    await $fetch(`/api/campaigns/${params.campaignId}`, { method: 'DELETE' })
-    await navigateTo('/campaigns')
-  } catch {
-    deleteState.value = 'idle'
-  }
-}
+const { execute: deleteCampaign, status: deleteStatus } = useFetch(`/api/campaigns/${params.campaignId}`, {
+  immediate: false,
+  method: 'DELETE',
+  onResponse: () => {
+    navigateTo('/campaigns')
+  },
+  watch: false,
+})
+
+onConfirm(() => deleteCampaign())
 </script>
 
 <template>
@@ -33,32 +40,17 @@ async function deleteCampaign() {
       <h1 class="text-4xl font-bold">{{ campaign?.name }}</h1>
 
       <div class="shrink-0">
-        <template v-if="deleteState === 'idle'">
-          <button
-            class="rounded bg-red-900/40 px-3 py-1.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-800/60 hover:text-red-300"
-            @click="deleteState = 'confirm'"
-          >
-            Delete campaign
-          </button>
+        <template v-if="deleteStatus === 'idle' && !isRevealed">
+          <UiButton variant="destroy" @click="reveal">Delete campaign</UiButton>
         </template>
-        <template v-else-if="deleteState === 'confirm'">
+        <template v-if="isRevealed">
           <div class="flex items-center gap-2">
             <span class="text-xs text-gray-400">Delete all sessions and wiki entries?</span>
-            <button
-              class="rounded bg-red-700 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-600"
-              @click="deleteCampaign"
-            >
-              Confirm
-            </button>
-            <button
-              class="rounded bg-gray-700 px-3 py-1.5 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-600"
-              @click="deleteState = 'idle'"
-            >
-              Cancel
-            </button>
+            <UiButton variant="destroy" @click="confirm">Confirm</UiButton>
+            <UiButton variant="tertiary" @click="cancel">Cancel</UiButton>
           </div>
         </template>
-        <template v-else>
+        <template v-if="deleteStatus === 'pending'">
           <span class="text-sm text-gray-400">Deleting…</span>
         </template>
       </div>

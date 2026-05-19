@@ -68,29 +68,29 @@ interface NodeErrorCause {
 // ── JSON Schema for structured output ─────────────────────────────────────────
 
 const wikiSchema = {
-  type: 'object',
   properties: {
-    title: { type: 'string' },
     content: { type: 'string' },
-    summary: {
-      type: 'array',
-      items: { type: 'string' },
-    },
     relations: {
-      type: 'array',
       items: {
-        type: 'object',
         properties: {
           characterA: { type: 'string' },
           characterB: { type: 'string' },
-          rating: { type: 'integer', minimum: -100, maximum: 100 },
           context: { type: 'string' },
+          rating: { maximum: 100, minimum: -100, type: 'integer' },
         },
         required: ['characterA', 'characterB', 'rating', 'context'],
+        type: 'object',
       },
+      type: 'array',
     },
+    summary: {
+      items: { type: 'string' },
+      type: 'array',
+    },
+    title: { type: 'string' },
   },
   required: ['title', 'content', 'summary', 'relations'],
+  type: 'object',
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -106,16 +106,7 @@ function loadTranscript(filePath: string): string {
 function isModelOnDisk(model: string): boolean {
   const [name, tag = 'latest'] = model.split(':')
   const home = process.env.USERPROFILE ?? process.env.HOME ?? ''
-  const manifestPath = path.join(
-    home,
-    '.ollama',
-    'models',
-    'manifests',
-    'registry.ollama.ai',
-    'library',
-    name,
-    tag,
-  )
+  const manifestPath = path.join(home, '.ollama', 'models', 'manifests', 'registry.ollama.ai', 'library', name, tag)
   return fs.existsSync(manifestPath)
 }
 
@@ -165,12 +156,12 @@ async function generateWikiEntry(transcript: string, model: string, numCtx: numb
 
   try {
     const response = await ollama.chat({
-      model,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: `Here is the session transcript:\n\n${transcript}` },
-      ],
       format: wikiSchema,
+      messages: [
+        { content: SYSTEM_PROMPT, role: 'system' },
+        { content: `Here is the session transcript:\n\n${transcript}`, role: 'user' },
+      ],
+      model,
       options: { num_ctx: numCtx },
     })
 
@@ -206,7 +197,7 @@ function sanitiseContent(content: string): string {
       /^[*-]?\s*["{[{}\][]/.test(trimmed) ||
       /^[*-]?\s*"\w+":\s/.test(trimmed) ||
       /^[*-]?\s*(relations|score|context|characterA|characterB|reasoning_tag)\b/.test(trimmed) ||
-      trimmed === '' && i === lines.length - 1
+      (trimmed === '' && i === lines.length - 1)
     if (looksLikeJson) {
       cutAt = i
     } else {
@@ -216,7 +207,7 @@ function sanitiseContent(content: string): string {
   return lines.slice(0, cutAt).join('\n').trimEnd()
 }
 
-function formatMarkdown(entry: WikiEntry, transcriptName: string, sessionId: string | null): string {
+function formatMarkdown(entry: WikiEntry, transcriptName: string, sessionId: null | string): string {
   const date = new Date().toISOString().split('T')[0]
   const summaryLines = entry.summary.map((s) => `- ${s}`).join('\n')
   const content = sanitiseContent(entry.content)
@@ -246,14 +237,14 @@ async function postRelations(relations: Relation[], sessionId: string, apiUrl: s
   for (const relation of relations) {
     try {
       await fetch(`${apiUrl}/api/graph/relationships`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           characterAName: relation.characterA,
           characterBName: relation.characterB,
           score: relation.rating,
           sessionId,
         }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
       })
       succeeded++
     } catch {
@@ -289,17 +280,32 @@ async function main() {
   }
 
   let transcriptPath = ''
-  let sessionId: string | null = null
+  let sessionId: null | string = null
   let model = DEFAULT_MODEL
   let numCtx = DEFAULT_CTX
   let apiUrl = DEFAULT_API_URL
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--model') { model = args[++i]!; continue }
-    if (args[i] === '--ctx') { numCtx = parseInt(args[++i]!); continue }
-    if (args[i] === '--session-id') { sessionId = args[++i]!; continue }
-    if (args[i] === '--api-url') { apiUrl = args[++i]!; continue }
-    if (!transcriptPath) { transcriptPath = args[i]!; continue }
+    if (args[i] === '--model') {
+      model = args[++i]!
+      continue
+    }
+    if (args[i] === '--ctx') {
+      numCtx = parseInt(args[++i]!)
+      continue
+    }
+    if (args[i] === '--session-id') {
+      sessionId = args[++i]!
+      continue
+    }
+    if (args[i] === '--api-url') {
+      apiUrl = args[++i]!
+      continue
+    }
+    if (!transcriptPath) {
+      transcriptPath = args[i]!
+      continue
+    }
   }
 
   const transcript = loadTranscript(transcriptPath)
@@ -310,7 +316,9 @@ async function main() {
   console.log(`Model      : ${model}  (ctx=${numCtx.toLocaleString()} tokens)`)
 
   if (estimatedTokens > numCtx) {
-    console.warn(`Warning: transcript is ~${estimatedTokens.toLocaleString()} tokens — may exceed ctx limit of ${numCtx.toLocaleString()}.`)
+    console.warn(
+      `Warning: transcript is ~${estimatedTokens.toLocaleString()} tokens — may exceed ctx limit of ${numCtx.toLocaleString()}.`,
+    )
   }
 
   await ensureModel(model)

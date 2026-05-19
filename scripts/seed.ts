@@ -128,10 +128,7 @@ async function main() {
   const db = await getDb()
 
   // 1. Create campaign
-  const [campaign] = await db
-    .insert(schema.campaigns)
-    .values({ name: 'Test Campaign' })
-    .returning()
+  const [campaign] = await db.insert(schema.campaigns).values({ name: 'Test Campaign' }).returning()
 
   console.log(`Created campaign: "${campaign!.name}" (id=${campaign!.id})`)
 

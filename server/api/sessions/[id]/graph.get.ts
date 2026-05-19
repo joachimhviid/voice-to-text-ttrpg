@@ -3,16 +3,15 @@ import { db } from '#server/db'
 import { characters, characterRelationships } from '#server/db/schema'
 
 export default defineEventHandler(async (event) => {
-  const sessionId = event.context.params?.sessionId
-
+  const sessionId = getRouterParam(event, 'id')
   if (!sessionId) {
-    throw createError({ statusCode: 400, statusMessage: 'sessionId is required' })
+    throw createError({
+      status: 400,
+      statusText: 'No session id provided',
+    })
   }
 
-  const edges = await db
-    .select()
-    .from(characterRelationships)
-    .where(eq(characterRelationships.sessionId, sessionId))
+  const edges = await db.select().from(characterRelationships).where(eq(characterRelationships.sessionId, sessionId))
 
   if (edges.length === 0) {
     return { edges: [], nodes: [] }
