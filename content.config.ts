@@ -1,9 +1,18 @@
-import { defineContentConfig, defineCollection } from '@nuxt/content'
+import { defineContentConfig, defineCollection, z } from '@nuxt/content'
 
 export default defineContentConfig({
   collections: {
+    // General content — explicitly excludes the wiki/ subdirectory
     content: defineCollection({
-      source: '**/*.md',
+      source: { exclude: ['wiki/**'], include: '*.md' },
+      type: 'page',
+    }),
+    wiki: defineCollection({
+      schema: z.object({
+        date: z.coerce.string(),
+        sessionId: z.string(),
+      }),
+      source: 'wiki/**/*.md',
       type: 'page',
     }),
   },

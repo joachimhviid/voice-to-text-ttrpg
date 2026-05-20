@@ -3,9 +3,6 @@
 <template>
   <div class="prose prose-invert prose-a:no-underline lg:prose-xl mx-auto">
     <h1>D&D Sessions</h1>
-    <p>
-      <NuxtLink to="/new-session">New Session</NuxtLink>
-    </p>
     <div class="flex gap-2">
       <NuxtLink
         to="/join"

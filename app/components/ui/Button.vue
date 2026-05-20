@@ -7,6 +7,7 @@ import { NuxtLink } from '#components'
 const props = defineProps<{
   icon?: string
   link?: NuxtRoute<RoutesNamesList, string>
+  size?: 'default' | 'sm'
   variant: 'destroy' | 'primary' | 'secondary' | 'tertiary'
 }>()
 
@@ -30,14 +31,24 @@ const buttonClasses = computed(() => {
     })
     .exhaustive()
 })
+
+const buttonSizeClasses = computed(() => {
+  return match(props.size)
+    .with('sm', () => {
+      return ['px-3 py-1 text-sm']
+    })
+    .otherwise(() => {
+      return ['px-4 py-2']
+    })
+})
 </script>
 
 <template>
   <component
     :is="link ? NuxtLink : 'button'"
     :to="link"
-    class="inline-flex cursor-pointer items-center justify-center gap-2 rounded px-4 py-2 transition disabled:cursor-not-allowed disabled:text-gray-200/50"
-    :class="buttonClasses"
+    class="inline-flex cursor-pointer items-center justify-center gap-2 rounded transition disabled:cursor-not-allowed disabled:text-gray-200/50"
+    :class="[buttonClasses, buttonSizeClasses]"
   >
     <Icon v-if="icon" :name="icon" />
     <slot />

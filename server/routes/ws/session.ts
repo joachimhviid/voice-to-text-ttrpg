@@ -99,7 +99,7 @@ export default defineWebSocketHandler({
           return
         }
 
-        combineTranscripts(participant.sessionId)
+        combineTranscripts(participant)
         db.update(sessions).set({ status: SessionStatus.CLOSED }).where(eq(sessions.id, participant.sessionId)).run()
 
         peer.peers.forEach((p) => p.close(1000))

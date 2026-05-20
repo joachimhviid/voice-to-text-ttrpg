@@ -29,6 +29,7 @@ export const sessions = sqliteTable('sessions', {
     .notNull(),
   id: text('id').primaryKey(),
   status: text('status').default(SessionStatus.OPEN).notNull(),
+  wikiSlug: text('wiki_slug'),
 })
 
 export const sessionRelations = relations(sessions, ({ one }) => ({
@@ -86,3 +87,32 @@ export const participantRelations = relations(participants, ({ one }) => ({
     references: [sessions.id],
   }),
 }))
+export const wiki = sqliteTable('wiki', {
+  combatStats: text('combat_stats'),
+  content: text('content').notNull(),
+  id: int('id').primaryKey({ autoIncrement: true }),
+  imageUrl: text('image_url'),
+  inventoryStats: text('inventory_stats'),
+  relations: text('relations'),
+  summary: text('summary'),
+  title: text('title').notNull(),
+})
+
+export const characters = sqliteTable('characters', {
+  id: int('id').primaryKey({ autoIncrement: true }),
+  imageUrl: text('image_url').default('https://placehold.co/100x100?text=Char'),
+  name: text('name').notNull(),
+  wikiId: int('wiki_id').references(() => wiki.id),
+})
+
+export const characterRelationships = sqliteTable('character_relationships', {
+  character1Id: int('character1_id')
+    .references(() => characters.id)
+    .notNull(),
+  character2Id: int('character2_id')
+    .references(() => characters.id)
+    .notNull(),
+  id: int('id').primaryKey({ autoIncrement: true }),
+  score: int('score').notNull().default(0),
+  sessionId: text('session_id').references(() => sessions.id),
+})

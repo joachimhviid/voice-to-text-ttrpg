@@ -1,0 +1,78 @@
+GM:We pick up where we left off. The three of you are crouched in the service tunnel beneath the Vault of Thessan, knee-deep in cold water that smells faintly of iron. Somewhere above you, you can hear the heavy footsteps of the golem patrol. Rook, you said last session you had a plan.
+ROOK:Yeah, okay. So the patrol rotates every four minutes. We watched it for two full cycles before we came down here. That gives us a window to get through the grate, across the antechamber, and into the side passage before it doubles back.
+GM:Four minutes feels optimistic given that Mira is still picking rust off the grate lock.
+MIRA:I'm working on it! This is a masterwork lock, it's not a barn door. Give me thirty seconds.
+CADEN:We don't have thirty seconds.
+MIRA:You want to kick it open? Go ahead. I'll wait outside while the golem turns you into paste.
+CADEN:I'm just saying.
+MIRA:You're always just saying something, Caden.
+GM:While you two are bickering, the lock clicks open. Mira, you have it.
+MIRA:Obviously. Okay, the grate swings in. There's about a three foot drop to a dry floor on the other side. The antechamber is lit by a single drift-globe, pale blue light, very low. I can see two doors, one straight ahead and one to the right.
+ROOK:The map shows the vault is through the right door. Straight ahead leads to the curator's office. We do not want the curator's office.
+GM:Make a perception check, Rook.
+ROOK:Fourteen.
+GM:You notice the drift-globe is slightly brighter than it was on your scouting pass two nights ago. Someone has been in here recently.
+ROOK:That's bad.
+CADEN:How bad?
+ROOK:Someone-was-here-recently bad.
+GM:The footsteps above you stop.
+MIRA:I hate this job.
+CADEN:You love this job.
+MIRA:I hate this specific moment of this job.
+GM:The footsteps resume, moving away. You have your window. What do you do?
+ROOK:We move. Right door. Now.
+GM:Roll stealth, all three of you.
+CADEN:Eleven.
+MIRA:Seventeen.
+ROOK:Natural one.
+GM:Rook, you clear the grate and immediately catch your boot on the lip. You go down hard on the stone floor. The sound echoes in the antechamber like a dropped shield in a cathedral.
+ROOK:Fantastic.
+CADEN:I grab Rook by the collar and drag them toward the right door.
+GM:The drift-globe flickers. From somewhere deeper in the vault, you hear what sounds like the grinding of stone on stone. Something woke up.
+MIRA:I'm through the door. I'm waving at them desperately.
+GM:Caden, you haul Rook through the door just as the grinding sound gets louder. You're in a narrow passage now, stone shelves on either side lined with sealed iron canisters. At the far end, maybe forty feet away, is a door reinforced with what looks like copper banding and a very serious lock.
+MIRA:That's the one. That's where they're keeping the Anamnesis Coil.
+ROOK:My knee is absolutely destroyed, I want to note.
+GM:Noted. The grinding sound has stopped, which might be more alarming than if it had continued.
+CADEN:I pull out the dispelling rod the artificer gave us. If there's a ward on that door, this should kill it silently.
+GM:Make an arcana check to assess the door from here.
+CADEN:Eight.
+GM:You're not sure if there's a ward on it or not. Could be. Could be mundane. The copper banding is definitely not decorative though — that's a Faraday cage construction, means whatever is inside is either magical and they want to keep it contained, or it's sensitive to outside magical interference and they want to keep spells out.
+MIRA:If we use the dispelling rod and there's no ward, does it do anything bad?
+CADEN:The artificer said it was safe.
+ROOK:The artificer also said the service tunnel would be dry.
+CADEN:She was mostly right about the tunnel.
+MIRA:I'm going to check the door myself. I move up slowly. Dex to check for tripwires?
+GM:Yes, go ahead.
+MIRA:Nineteen.
+GM:There's a tripwire. Six inches off the ground, nearly invisible, runs across the passage at about the ten foot mark from the door. It's attached to a small iron bell mounted on the ceiling. Old fashioned but effective.
+MIRA:I step over it and keep going. Any other surprises between me and the door?
+GM:No, you're clear. You reach the door. The lock is similar to the grate but heavier. Give me a thieves' tools roll with disadvantage — the copper banding is making your hands feel slightly numb and your tools feel sluggish.
+MIRA:Even with disadvantage, that's a twenty-two.
+GM:The lock surrenders. The door swings open on silent hinges and there it is. Sitting in the center of a velvet-lined case on a stone shelf, a small coil of silver-white metal that seems to catch light that isn't there. The Anamnesis Coil. It looks exactly like the drawing in the brief. It's also the only thing in the room.
+ROOK:That's suspicious.
+CADEN:It's a vault. Of course it's the only thing in the room.
+ROOK:I've done a lot of vaults, Caden. If the thing you're looking for is the only thing in the room, there's a reason it's the only thing in the room.
+GM:Mira, you're closest. What do you do?
+MIRA:I study the case. Is the velvet damp? Is there anything holding the coil in place, pins or straps?
+GM:The velvet is dry. The coil is just resting in a shaped indentation. No restraints. No visible mechanism.
+MIRA:I look for any sensor — a weight plate, a beam of light across the indentation, anything.
+GM:Perception.
+MIRA:Thirteen.
+GM:Nothing visible. It looks clean.
+ROOK:It's not clean.
+CADEN:Would you rather leave empty handed?
+ROOK:I'd rather not trigger whatever is actually guarding this thing.
+GM:The silence stretches. From somewhere behind you, back in the antechamber, you hear the grinding sound again. Closer now.
+MIRA:I'm taking it.
+ROOK:Of course you are.
+GM:Mira, you lift the Anamnesis Coil from its case. For a half second, nothing happens. Then the drift-globe in the antechamber blazes white, and you hear the copper banding on the door behind you begin to hum.
+CADEN:Run.
+MIRA:I'm already running.
+GM:The grinding in the antechamber reaches a crescendo and you hear the unmistakable crack of stone fists hitting a wall. The secondary golem is active and it knows exactly where you are. You have approximately two rounds before it reaches your passage. Rook, you're at the back with a bad knee. What do you do?
+ROOK:I pull the smoke flask from my pack and shatter it in the passage entrance. That should slow it.
+GM:Make a dexterity check to get it deployed without tripping the bell wire.
+ROOK:Oh no.
+GM:Oh no is right.
+ROOK:Six.
+GM:The bell rings.

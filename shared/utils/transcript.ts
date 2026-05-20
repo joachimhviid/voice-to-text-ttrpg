@@ -49,103 +49,99 @@ export function saveTranscript(participant: PeerParticipantContext, timestamp: n
     })
 }
 
-export function combineTranscripts(sessionId: string) {
-  const sessionDirectory = join(TRANSCRIPT_DIRECTORY, sessionId)
-
-  void readdir(sessionDirectory, { withFileTypes: true })
-    .then((entries) => {
-      const participantTranscriptFiles = entries
-        .filter((entry) => entry.isFile() && entry.name.endsWith('.jsonl') && entry.name !== MASTER_TRANSCRIPT_FILE)
-        .map((entry) => join(sessionDirectory, entry.name))
-
-      if (participantTranscriptFiles.length === 0) {
-        return [] as TranscriptLine[]
-      }
-
-      return Promise.all(participantTranscriptFiles.map((filePath) => readFile(filePath, { encoding: 'utf8' }))).then(
-        (contents) => {
-          const mergedLines: TranscriptLine[] = []
-
-          for (const content of contents) {
-            const parsedLines: TranscriptLine[] = []
-            const rawLines = content
-              .split(/\r?\n/)
-              .map((line) => line.trim())
-              .filter(Boolean)
-
-            for (const rawLine of rawLines) {
-              try {
-                const result = transcriptLineSchema.safeParse(JSON.parse(rawLine))
-                if (result.success) {
-                  parsedLines.push(result.data)
-                }
-              } catch (error: unknown) {
-                console.error('Malformed line in transcript', error)
-              }
-            }
-            mergedLines.push(...cleanTranscript(parsedLines))
-          }
-
-          mergedLines.sort((a, b) => {
-            if (a.spokenAtUnixMs !== b.spokenAtUnixMs) {
-              return a.spokenAtUnixMs - b.spokenAtUnixMs
-            }
-
-            return a.participantId - b.participantId
-          })
-
-          return mergedLines
-        },
-      )
+/** Called from the WebSocket handler — delegates to combineTranscriptsForSession. */
+export function combineTranscripts(participant: PeerParticipantContext): void {
+  void combineTranscriptsForSession(participant.sessionId).catch((error) => {
+    console.error('Failed to combine transcripts', {
+      error,
+      participantId: participant.participantId,
+      sessionId: participant.sessionId,
     })
-    .then((mergedLines) => {
-      const masterTranscriptPath = join(sessionDirectory, MASTER_TRANSCRIPT_FILE)
-      const serialized = mergedLines.map((line) => JSON.stringify(line)).join('\n')
-      const serializedWithTrailingNewline = serialized ? `${serialized}\n` : ''
-
-      return writeFile(masterTranscriptPath, serializedWithTrailingNewline, { encoding: 'utf8' })
-    })
-    .catch((error: unknown) => {
-      console.error('Failed to combine transcripts', {
-        error,
-        sessionId,
-      })
-    })
+  })
 }
 
-export async function compileTranscript(sessionId: string) {
+/**
+ * Reads all per-participant .jsonl files for a session, applies cleanTranscript
+ * to each to deduplicate rolling speech recognitions, merges and sorts by
+ * timestamp, then writes the result to master.jsonl.
+ */
+export async function combineTranscriptsForSession(sessionId: string): Promise<void> {
+  const sessionDirectory = join(TRANSCRIPT_DIRECTORY, sessionId)
+
+  const entries = await readdir(sessionDirectory, { withFileTypes: true })
+  const participantTranscriptFiles = entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.jsonl') && entry.name !== MASTER_TRANSCRIPT_FILE)
+    .map((entry) => join(sessionDirectory, entry.name))
+
+  if (participantTranscriptFiles.length === 0) return
+
+  const fileContents = await Promise.all(
+    participantTranscriptFiles.map((filePath) => readFile(filePath, { encoding: 'utf8' })),
+  )
+
+  const mergedLines: TranscriptLine[] = []
+
+  for (const content of fileContents) {
+    const parsedLines: TranscriptLine[] = []
+    const rawLines = content
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+
+    for (const rawLine of rawLines) {
+      try {
+        const result = transcriptLineSchema.safeParse(JSON.parse(rawLine))
+        if (result.success) parsedLines.push(result.data)
+      } catch (error: unknown) {
+        console.error('Malformed line in transcript', error)
+      }
+    }
+
+    mergedLines.push(...cleanTranscript(parsedLines))
+  }
+
+  mergedLines.sort((a, b) => {
+    if (a.spokenAtUnixMs !== b.spokenAtUnixMs) return a.spokenAtUnixMs - b.spokenAtUnixMs
+    return a.participantId - b.participantId
+  })
+
+  const masterTranscriptPath = join(sessionDirectory, MASTER_TRANSCRIPT_FILE)
+  const serialized = mergedLines.map((line) => JSON.stringify(line)).join('\n')
+  await writeFile(masterTranscriptPath, serialized ? `${serialized}\n` : '', { encoding: 'utf8' })
+}
+
+/**
+ * Reads master.jsonl for a session and compiles it into "Nickname: transcript" lines.
+ * Writes compiled_master.txt and returns the compiled string.
+ */
+export async function compileTranscript(sessionId: string): Promise<string> {
   const sessionDirectory = join(TRANSCRIPT_DIRECTORY, sessionId)
   const masterTranscriptPath = join(sessionDirectory, MASTER_TRANSCRIPT_FILE)
 
-  const compiledMasterTranscriptLines = await readFile(masterTranscriptPath, { encoding: 'utf8' }).then((contents) => {
-    const compiledLines: string[] = []
+  const contents = await readFile(masterTranscriptPath, { encoding: 'utf8' })
+  const compiledLines: string[] = []
 
-    for (const content of contents) {
-      const rawLines = content
-        .split(/\r?\n/)
-        .map((line) => line.trim())
-        .filter(Boolean)
+  const rawLines = contents
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
 
-      for (const rawLine of rawLines) {
-        try {
-          const result = transcriptLineSchema.safeParse(JSON.parse(rawLine))
-          if (result.success) {
-            compiledLines.push(`${result.data.nickname}: ${result.data.transcript}`)
-          }
-        } catch (error: unknown) {
-          console.error('Malformed line in transcript', error)
-        }
+  for (const rawLine of rawLines) {
+    try {
+      const result = transcriptLineSchema.safeParse(JSON.parse(rawLine))
+      if (result.success) {
+        compiledLines.push(`${result.data.nickname}: ${result.data.transcript}`)
       }
-
-      return compiledLines
+    } catch (error: unknown) {
+      console.error('Malformed line in transcript', error)
     }
-  })
-
-  if (!compiledMasterTranscriptLines) {
-    throw new Error('Failed to compile master transcript')
   }
+
+  const compiled = compiledLines.join('\n')
   const compiledMasterTranscriptPath = join(sessionDirectory, COMPILED_MASTER_TRANSCRIPT_FILE)
-  await writeFile(compiledMasterTranscriptPath, compiledMasterTranscriptLines.join('\n'), { encoding: 'utf8' })
+  await writeFile(compiledMasterTranscriptPath, compiled, { encoding: 'utf8' })
+
+  return compiled
 }
 
 export function cleanTranscript(lines: TranscriptLine[]): TranscriptLine[] {
